@@ -1,0 +1,28 @@
+{
+  "name": "@veridex/examples",
+  "version": "1.0.0",
+  "description": "Example implementations using Veridex Protocol SDK",
+  "type": "module",
+  "scripts": {
+    "basic:wallet": "npx ts-node basic/01-create-wallet.ts",
+    "basic:balances": "npx ts-node basic/02-get-balances.ts",
+    "basic:send": "npx ts-node basic/03-send-tokens.ts",
+    "basic:crosschain": "npx ts-node basic/04-cross-chain.ts",
+    "basic:gasless": "npx ts-node basic/05-gasless.ts",
+    "session:create": "npx ts-node sessions/01-create-session.ts",
+    "session:batch": "npx ts-node sessions/02-execute-batch.ts",
+    "advanced:swap": "npx ts-node advanced/cross-chain-swap.ts",
+    "contracts:compile": "cd contracts && npx hardhat compile",
+    "contracts:deploy": "cd contracts && npx hardhat run scripts/deploy-all.ts --network baseSepolia"
+  },
+  "dependencies": {
+    "veridex-sdk": "workspace:*",
+    "ethers": "^6.13.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
+  }
+}
