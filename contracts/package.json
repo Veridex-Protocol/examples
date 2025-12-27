@@ -1,0 +1,20 @@
+{
+  "name": "@veridex/example-contracts",
+  "version": "1.0.0",
+  "description": "Example smart contracts for Veridex integrations",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:gateway": "hardhat run scripts/deploy-payment-gateway.ts --network baseSepolia",
+    "deploy:nft": "hardhat run scripts/deploy-nft-gated.ts --network baseSepolia",
+    "deploy:subscription": "hardhat run scripts/deploy-subscription.ts --network baseSepolia",
+    "deploy:escrow": "hardhat run scripts/deploy-escrow.ts --network baseSepolia",
+    "deploy:all": "hardhat run scripts/deploy-all.ts --network baseSepolia"
+  },
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "@openzeppelin/contracts": "^5.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.19.4"
+  }
+}
