@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
 
@@ -22,11 +22,11 @@ import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
  * 
  * Example usage:
  * ```typescript
- * import { createSDK } from '@veridex/sdk';
+ * import { createSDK } from 'veridex/sdk';
  * 
  * // Seller on Ethereum
  * const sellerSdk = createSDK('ethereum');
- * await sellerSdk.passkey.register('seller@example.com', 'Seller');
+ * await sellerSdk.passkey.register("seller-example.com", "Seller");
  * 
  * // Create escrow
  * const escrowId = await escrow.createEscrow({

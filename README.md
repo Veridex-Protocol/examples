@@ -26,7 +26,7 @@ examples/
 │   ├── NFTGatedAccess.sol     # NFT access control via vault ownership
 │   ├── SubscriptionManager.sol # Recurring payments from vaults
 │   ├── CrossChainEscrow.sol   # Cross-chain escrow with passkey auth
-│   └── DAOGovernance.sol      # DAO voting via passkey signatures
+│
 │
 ├── basic/                  # Core SDK usage patterns
 │   ├── 01-create-wallet.ts    # Create passkey wallet
@@ -45,11 +45,7 @@ examples/
 │   ├── nft-marketplace/       # NFT trading with passkeys
 │   ├── defi-vault/            # DeFi yield vault integration
 │   └── gaming/                # In-game asset management
-│
-└── advanced/               # Advanced patterns
-    ├── multi-sig.ts           # Multi-passkey authorization
-    ├── account-recovery.ts    # Social recovery flow
-    └── cross-chain-swap.ts    # Atomic cross-chain swaps
+
 ```
 
 ## Supported Chains

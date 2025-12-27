@@ -3,7 +3,7 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
@@ -14,10 +14,10 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * 
  * Example usage:
  * ```typescript
- * import { createSDK } from '@veridex/sdk';
+ * import { createSDK } from 'veridex-sdk';
  * 
  * const sdk = createSDK('base');
- * await sdk.passkey.register('merchant@shop.com', 'My Shop');
+ * await sdk.passkey.register('merchant (at) shop.com', 'My Shop');
  * 
  * // Create invoice
  * const invoiceId = await gateway.createInvoice(
@@ -45,7 +45,7 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
         uint256 paidAmount;         // Amount paid so far
         uint256 createdAt;          // Creation timestamp
         uint256 expiresAt;          // Expiration timestamp (0 = never)
-        string reference;           // External reference (order ID, etc.)
+        string externalReference;   // External reference (order ID, etc.)
         InvoiceStatus status;       // Current status
         address payer;              // Who paid (if paid)
         uint256 paidAt;             // When paid
@@ -111,7 +111,7 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
         address indexed merchant,
         address token,
         uint256 amount,
-        string reference
+        string externalReference
     );
 
     event InvoicePaid(
@@ -165,7 +165,7 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
      * @dev The vault address should be computed from the merchant's passkey:
      * ```typescript
      * const sdk = createSDK('base');
-     * await sdk.passkey.register('merchant@example.com', 'My Store');
+    * await sdk.passkey.register('merchant (at) example.com', 'My Store');
      * const vaultAddress = sdk.getVaultAddress();
      * await gateway.registerMerchant(vaultAddress, 'My Store');
      * ```
@@ -189,14 +189,14 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
      * @notice Create a new invoice for payment
      * @param token Payment token (address(0) for native ETH/MATIC/etc)
      * @param amount Amount to charge
-     * @param reference External reference (order ID, subscription ID, etc)
+     * @param externalReference External reference (order ID, subscription ID, etc)
      * @param expiresIn Seconds until expiration (0 = never)
      * @return invoiceId The unique invoice identifier
      */
     function createInvoice(
         address token,
         uint256 amount,
-        string calldata reference,
+        string calldata externalReference,
         uint256 expiresIn
     ) external returns (bytes32 invoiceId) {
         if (!merchants[msg.sender].isActive) revert MerchantNotRegistered();
@@ -220,7 +220,7 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
             paidAmount: 0,
             createdAt: block.timestamp,
             expiresAt: expiresAt,
-            reference: reference,
+            externalReference: externalReference,
             status: InvoiceStatus.Pending,
             payer: address(0),
             paidAt: 0
@@ -229,7 +229,7 @@ contract VeridexPaymentGateway is ReentrancyGuard, Ownable {
         merchantInvoices[msg.sender].push(invoiceId);
         merchants[msg.sender].invoiceCount++;
 
-        emit InvoiceCreated(invoiceId, msg.sender, token, amount, reference);
+        emit InvoiceCreated(invoiceId, msg.sender, token, amount, externalReference);
     }
 
     // ============================================================================
