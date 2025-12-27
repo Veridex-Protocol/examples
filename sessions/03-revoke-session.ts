@@ -27,7 +27,7 @@ interface SessionInfo {
 }
 
 async function main() {
-    console.log('🔐 Veridex Session Key Revocation Example\n');
+    console.log('SECURITY Veridex Session Key Revocation Example\n');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base-sepolia');
@@ -39,7 +39,7 @@ async function main() {
     // Step 1: Create multiple session keys
     // =========================================================================
     
-    console.log('\n📋 Step 1: Creating Session Keys\n');
+    console.log('\nNOTE Step 1: Creating Session Keys\n');
 
     // Gaming session - short lived, limited
     const gamingSession: SessionInfo = {
@@ -57,7 +57,7 @@ async function main() {
         lastUsed: null,
     };
     sessions.set(gamingSession.id, gamingSession);
-    console.log(`   ✅ Created: ${gamingSession.name} (expires in 4h)`);
+    console.log(`   OK Created: ${gamingSession.name} (expires in 4h)`);
 
     // DeFi session - longer lived
     const defiSession: SessionInfo = {
@@ -75,7 +75,7 @@ async function main() {
         lastUsed: new Date(Date.now() - 2 * 60 * 60 * 1000),
     };
     sessions.set(defiSession.id, defiSession);
-    console.log(`   ✅ Created: ${defiSession.name} (expires in 7d)`);
+    console.log(`   OK Created: ${defiSession.name} (expires in 7d)`);
 
     // Old session that should be cleaned up
     const oldSession: SessionInfo = {
@@ -93,14 +93,14 @@ async function main() {
         lastUsed: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000),
     };
     sessions.set(oldSession.id, oldSession);
-    console.log(`   ⏰ Created: ${oldSession.name} (already expired)`);
+    console.log(`    Created: ${oldSession.name} (already expired)`);
 
     // =========================================================================
     // Step 2: List active sessions
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 2: List Active Sessions\n');
+    console.log('NOTE Step 2: List Active Sessions\n');
 
     console.log('Session                      Status    Uses     Expires');
     console.log('-'.repeat(60));
@@ -111,8 +111,8 @@ async function main() {
             ? `${Math.floor(expiresIn / (1000 * 60 * 60))}h`
             : 'expired';
         
-        const statusIcon = session.status === 'active' ? '🟢' : 
-                          session.status === 'revoked' ? '🔴' : '⏰';
+        const statusIcon = session.status === 'active' ? 'LOW' : 
+                          session.status === 'revoked' ? 'CRITICAL' : '';
         
         console.log(
             `${statusIcon} ${session.name.padEnd(24)} ` +
@@ -127,7 +127,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 3: Revoke Specific Session\n');
+    console.log('NOTE Step 3: Revoke Specific Session\n');
 
     console.log('Scenario: User finished gaming, wants to revoke gaming session\n');
 
@@ -142,7 +142,7 @@ async function main() {
     
     sessionToRevoke.status = 'revoked';
     
-    console.log(`   ✅ Session revoked!`);
+    console.log(`   OK Session revoked!`);
     console.log(`   Any pending transactions with this session will fail.`);
 
     // =========================================================================
@@ -150,11 +150,11 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 4: Emergency Revoke All\n');
+    console.log('NOTE Step 4: Emergency Revoke All\n');
 
     console.log('Scenario: User suspects compromise, wants to revoke everything\n');
 
-    console.log('⚠️  WARNING: This will revoke ALL active session keys!');
+    console.log('WARN  WARNING: This will revoke ALL active session keys!');
     console.log('   Automated systems using these keys will stop working.\n');
 
     // Simulate confirmation
@@ -168,11 +168,11 @@ async function main() {
                 // In production: await sdk.revokeSession(session.id);
                 session.status = 'revoked';
                 revokedCount++;
-                console.log(`   🔴 Revoked: ${session.name}`);
+                console.log(`   CRITICAL Revoked: ${session.name}`);
             }
         }
 
-        console.log(`\n   ✅ Revoked ${revokedCount} active sessions`);
+        console.log(`\n   OK Revoked ${revokedCount} active sessions`);
     }
 
     // =========================================================================
@@ -180,7 +180,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 5: Session Status Summary\n');
+    console.log('NOTE Step 5: Session Status Summary\n');
 
     const summary = {
         active: 0,
@@ -201,7 +201,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📚 Session Key Best Practices');
+    console.log('DOCS Session Key Best Practices');
     console.log('='.repeat(50));
 
     console.log(`
@@ -249,7 +249,7 @@ async function main() {
        });
     `);
 
-    console.log('\n✅ Session revocation example complete!');
+    console.log('\nOK Session revocation example complete!');
 }
 
 main().catch(console.error);

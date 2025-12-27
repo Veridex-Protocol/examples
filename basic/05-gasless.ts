@@ -15,14 +15,14 @@ const RELAYER_URL = process.env.RELAYER_URL || 'http://localhost:3001';
 const RELAYER_API_KEY = process.env.RELAYER_API_KEY;
 
 async function main() {
-    console.log('⛽ Veridex Gasless Transactions Example\n');
+    console.log(' Veridex Gasless Transactions Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
     // Step 1: Initialize SDK with Relayer
     // =========================================================================
     
-    console.log('\n📡 Initializing SDK with relayer...');
+    console.log('\nRPC Initializing SDK with relayer...');
     
     // The key is configuring relayerUrl
     const sdk = createSDK('base', {
@@ -31,21 +31,21 @@ async function main() {
     });
 
     console.log(`   Relayer: ${RELAYER_URL}`);
-    console.log('✅ SDK initialized with gasless support');
+    console.log('OK SDK initialized with gasless support');
 
     const vaultAddress = sdk.getVaultAddress();
-    console.log(`\n📍 Your vault: ${vaultAddress}`);
+    console.log(`\nLOCATION Your vault: ${vaultAddress}`);
 
     // =========================================================================
     // Step 2: Check Relayer Status
     // =========================================================================
     
-    console.log('\n🔍 Checking relayer status...');
+    console.log('\nVERIFY Checking relayer status...');
     
     try {
         const relayerInfo = await sdk.relayer.getInfo();
         
-        console.log(`\n📊 Relayer Information:`);
+        console.log(`\n Relayer Information:`);
         console.log(`   Status: ${relayerInfo.status}`);
         console.log(`   Supported Chains: ${relayerInfo.supportedChains.join(', ')}`);
         console.log(`   Fee Model: ${relayerInfo.feeModel}`);
@@ -55,7 +55,7 @@ async function main() {
         // Step 3: Get Fee Quote
         // =====================================================================
         
-        console.log('\n💵 Getting fee quote...');
+        console.log('\n Getting fee quote...');
         
         const feeQuote = await sdk.relayer.quoteFee({
             action: 'transfer',
@@ -64,7 +64,7 @@ async function main() {
             targetChain: 10004, // Base
         });
 
-        console.log(`\n📋 Fee Quote:`);
+        console.log(`\nNOTE Fee Quote:`);
         console.log(`   Relayer Fee: ${formatEther(feeQuote.relayerFee)} ETH`);
         console.log(`   Gas Estimate: ${feeQuote.gasEstimate}`);
         console.log(`   Total: ${formatEther(feeQuote.total)} ETH`);
@@ -74,7 +74,7 @@ async function main() {
         // Step 4: Execute Gasless Transfer
         // =====================================================================
         
-        console.log('\n🚀 Executing gasless transfer...');
+        console.log('\nSTART Executing gasless transfer...');
         console.log('   (You sign with passkey, relayer pays gas)\n');
 
         const result = await sdk.transferViaRelayer({
@@ -85,40 +85,40 @@ async function main() {
             onProgress: (status) => {
                 switch (status.stage) {
                     case 'preparing':
-                        console.log('   📝 Preparing transaction...');
+                        console.log('   NOTE Preparing transaction...');
                         break;
                     case 'signing':
-                        console.log('   🔐 Signing with passkey...');
+                        console.log('   SECURITY Signing with passkey...');
                         break;
                     case 'submitting':
-                        console.log('   📤 Submitting to relayer...');
+                        console.log('   SEND Submitting to relayer...');
                         break;
                     case 'relaying':
-                        console.log('   ⛽ Relayer broadcasting...');
+                        console.log('    Relayer broadcasting...');
                         break;
                     case 'confirming':
-                        console.log('   ⏳ Waiting for confirmation...');
+                        console.log('   WAIT Waiting for confirmation...');
                         break;
                     case 'complete':
-                        console.log('   ✅ Transaction confirmed!');
+                        console.log('   OK Transaction confirmed!');
                         break;
                 }
             },
         });
 
-        console.log('\n🎉 Gasless transfer successful!');
-        console.log(`\n📋 Transaction Details:`);
+        console.log('\nDONE Gasless transfer successful!');
+        console.log(`\nNOTE Transaction Details:`);
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Block: ${result.blockNumber}`);
         console.log(`   Fee Paid: ${formatEther(result.feePaid)} ETH`);
-        console.log(`   Fee Paid By: Relayer 🎁`);
+        console.log(`   Fee Paid By: Relayer REWARD`);
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error('\n❌ Error:', error.message);
+            console.error('\nERROR Error:', error.message);
             
             if (error.message.includes('connection')) {
-                console.log('\n💡 Make sure the relayer is running:');
+                console.log('\n Make sure the relayer is running:');
                 console.log('   cd packages/relayer && npm start');
             }
         }
@@ -131,14 +131,14 @@ async function main() {
 
 async function gaslessBridge() {
     console.log('\n' + '='.repeat(50));
-    console.log('🌉 Gasless Cross-Chain Bridge');
+    console.log('BRIDGE Gasless Cross-Chain Bridge');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base', {
         relayerUrl: RELAYER_URL,
     });
 
-    console.log('\n📋 Bridging 0.005 ETH to Optimism (gasless)...\n');
+    console.log('\nNOTE Bridging 0.005 ETH to Optimism (gasless)...\n');
 
     try {
         const result = await sdk.bridgeViaRelayer({
@@ -151,12 +151,12 @@ async function gaslessBridge() {
             },
         });
 
-        console.log('\n✅ Gasless bridge complete!');
+        console.log('\nOK Gasless bridge complete!');
         console.log(`   Source TX: ${result.sourceTxHash}`);
         console.log(`   Target TX: ${result.targetTxHash}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
@@ -167,7 +167,7 @@ async function gaslessBridge() {
 
 async function gaslessContractCall() {
     console.log('\n' + '='.repeat(50));
-    console.log('📜 Gasless Contract Execution');
+    console.log(' Gasless Contract Execution');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base', {
@@ -178,7 +178,7 @@ async function gaslessContractCall() {
     const contractAddress = '0x1234567890123456789012345678901234567890';
     const functionData = '0x...'; // Encoded function call
 
-    console.log('\n📋 Executing contract call (gasless)...');
+    console.log('\nNOTE Executing contract call (gasless)...');
 
     try {
         const result = await sdk.executeViaRelayer({
@@ -187,11 +187,11 @@ async function gaslessContractCall() {
             value: 0n, // Optional ETH value
         });
 
-        console.log('✅ Contract execution complete!');
+        console.log('OK Contract execution complete!');
         console.log(`   TX Hash: ${result.transactionHash}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
@@ -202,10 +202,10 @@ async function gaslessContractCall() {
 
 async function sponsoredVaultCreation() {
     console.log('\n' + '='.repeat(50));
-    console.log('🆓 Sponsored Vault Creation');
+    console.log(' Sponsored Vault Creation');
     console.log('='.repeat(50));
 
-    console.log('\n📋 Creating vault with sponsored gas...');
+    console.log('\nNOTE Creating vault with sponsored gas...');
     console.log('   (User pays nothing, sponsor pays gas)\n');
 
     const sdk = createSDK('base', {
@@ -221,31 +221,31 @@ async function sponsoredVaultCreation() {
             onProgress: (status) => {
                 switch (status.stage) {
                     case 'computing':
-                        console.log('   📝 Computing vault address...');
+                        console.log('   NOTE Computing vault address...');
                         break;
                     case 'checking':
-                        console.log('   🔍 Checking if vault exists...');
+                        console.log('   VERIFY Checking if vault exists...');
                         break;
                     case 'creating':
-                        console.log('   🏗️  Creating vault (sponsored)...');
+                        console.log('     Creating vault (sponsored)...');
                         break;
                     case 'confirming':
-                        console.log('   ⏳ Confirming...');
+                        console.log('   WAIT Confirming...');
                         break;
                     case 'complete':
-                        console.log('   ✅ Vault created!');
+                        console.log('   OK Vault created!');
                         break;
                 }
             },
         });
 
-        console.log('\n🎉 Vault created with sponsored gas!');
+        console.log('\nDONE Vault created with sponsored gas!');
         console.log(`   Vault Address: ${result.vaultAddress}`);
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Gas Cost: ${formatEther(result.gasCost)} ETH (paid by sponsor)`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
@@ -256,11 +256,11 @@ async function sponsoredVaultCreation() {
 
 function explainFeeStructure() {
     console.log('\n' + '='.repeat(50));
-    console.log('💰 Gasless Fee Structure');
+    console.log('BALANCE Gasless Fee Structure');
     console.log('='.repeat(50));
 
     console.log(`
-📋 How Gasless Transactions Work:
+NOTE How Gasless Transactions Work:
 
 1. USER SIGNS
    User signs the action with their passkey.
@@ -297,10 +297,10 @@ function explainFeeStructure() {
 
 5. SECURITY
 
-   ✅ User always signs the exact action
-   ✅ Relayer cannot modify the transaction
-   ✅ Passkey signature is verified on-chain
-   ✅ Replay protection via nonces
+   OK User always signs the exact action
+   OK Relayer cannot modify the transaction
+   OK Passkey signature is verified on-chain
+   OK Replay protection via nonces
     `);
 }
 

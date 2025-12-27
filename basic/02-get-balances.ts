@@ -23,7 +23,7 @@ const TOKENS = {
 };
 
 async function main() {
-    console.log('💰 Veridex Multi-Chain Balance Example\n');
+    console.log('BALANCE Veridex Multi-Chain Balance Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
@@ -32,25 +32,25 @@ async function main() {
     
     const sdk = createSDK('base');
     
-    console.log('\n📡 SDK initialized for Base testnet');
+    console.log('\nRPC SDK initialized for Base testnet');
     
     // Assuming passkey already registered (from example 01)
     // In production, you'd load the existing credential
     const vaultAddress = sdk.getVaultAddress();
     
-    console.log(`\n📍 Vault address: ${vaultAddress}`);
+    console.log(`\nLOCATION Vault address: ${vaultAddress}`);
 
     // =========================================================================
     // Step 2: Get Native Token Balance
     // =========================================================================
     
-    console.log('\n🔍 Fetching balances...\n');
+    console.log('\nVERIFY Fetching balances...\n');
 
     try {
         // Get native ETH balance on Base
         const nativeBalance = await sdk.getBalance('native');
         
-        console.log('📊 Native Token Balances:');
+        console.log(' Native Token Balances:');
         console.log(`   Base ETH: ${formatEther(nativeBalance)} ETH`);
 
         // =====================================================================
@@ -64,7 +64,7 @@ async function main() {
         // Step 4: Get Multi-Chain Portfolio
         // =====================================================================
         
-        console.log('\n🌐 Multi-Chain Portfolio:');
+        console.log('\nNETWORK Multi-Chain Portfolio:');
         console.log('-'.repeat(50));
 
         // Get balances across all configured chains
@@ -84,7 +84,7 @@ async function main() {
         // Step 5: Get Balance with Wormhole Query Proof
         // =====================================================================
         
-        console.log('\n🔮 Guardian-Attested Balance Query:');
+        console.log('\nQUERIES Guardian-Attested Balance Query:');
         console.log('-'.repeat(50));
 
         // This uses Wormhole Queries for cryptographic proof of balance
@@ -102,10 +102,10 @@ async function main() {
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error('\n❌ Error fetching balances:', error.message);
+            console.error('\nERROR Error fetching balances:', error.message);
             
             if (error.message.includes('not registered')) {
-                console.log('\n💡 Tip: Run 01-create-wallet.ts first to register a passkey.');
+                console.log('\n Tip: Run 01-create-wallet.ts first to register a passkey.');
             }
         }
     }
@@ -117,7 +117,7 @@ async function main() {
 
 async function showBalanceManagerExample() {
     console.log('\n' + '='.repeat(50));
-    console.log('📦 Balance Manager with Caching');
+    console.log('PACKAGE Balance Manager with Caching');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
@@ -125,20 +125,20 @@ async function showBalanceManagerExample() {
     // The SDK includes a BalanceManager that caches balances
     // to reduce RPC calls and improve performance
 
-    console.log('\n🔄 First fetch (from RPC):');
+    console.log('\nIN PROGRESS First fetch (from RPC):');
     const start1 = Date.now();
     const balance1 = await sdk.getBalance('native');
     console.log(`   Time: ${Date.now() - start1}ms`);
     console.log(`   Balance: ${formatEther(balance1)} ETH`);
 
-    console.log('\n⚡ Second fetch (from cache):');
+    console.log('\nFAST Second fetch (from cache):');
     const start2 = Date.now();
     const balance2 = await sdk.getBalance('native');
     console.log(`   Time: ${Date.now() - start2}ms`);
     console.log(`   Balance: ${formatEther(balance2)} ETH`);
 
     // Force refresh if needed
-    console.log('\n🔄 Force refresh:');
+    console.log('\nIN PROGRESS Force refresh:');
     const start3 = Date.now();
     const balance3 = await sdk.getBalance('native', { forceRefresh: true });
     console.log(`   Time: ${Date.now() - start3}ms`);
@@ -151,13 +151,13 @@ async function showBalanceManagerExample() {
 
 async function showCrossChainBalances() {
     console.log('\n' + '='.repeat(50));
-    console.log('🔗 Cross-Chain Balance Comparison');
+    console.log('LINK Cross-Chain Balance Comparison');
     console.log('='.repeat(50));
 
     // Create SDKs for multiple chains
     const chains = ['base', 'optimism', 'arbitrum'] as const;
     
-    console.log('\n📊 Vault balances across chains:\n');
+    console.log('\n Vault balances across chains:\n');
     console.log('Chain          | ETH Balance      | Status');
     console.log('-'.repeat(50));
 
@@ -166,9 +166,9 @@ async function showCrossChainBalances() {
             const sdk = createSDK(chain);
             const balance = await sdk.getBalance('native');
             const formatted = formatEther(balance).padEnd(16);
-            console.log(`${chain.padEnd(14)} | ${formatted} | ✅`);
+            console.log(`${chain.padEnd(14)} | ${formatted} | OK`);
         } catch (error) {
-            console.log(`${chain.padEnd(14)} | N/A              | ❌ Error`);
+            console.log(`${chain.padEnd(14)} | N/A              | ERROR Error`);
         }
     }
 }

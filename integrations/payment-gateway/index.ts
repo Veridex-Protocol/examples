@@ -26,14 +26,14 @@ const GATEWAY_ABI = [
 const GATEWAY_ADDRESS = process.env.GATEWAY_ADDRESS || '0x...';
 
 async function main() {
-    console.log('💳 Veridex Payment Gateway Integration\n');
+    console.log(' Veridex Payment Gateway Integration\n');
     console.log('='.repeat(60));
 
     // =========================================================================
     // Part 1: Merchant Setup
     // =========================================================================
     
-    console.log('\n📦 PART 1: MERCHANT SETUP');
+    console.log('\nPACKAGE PART 1: MERCHANT SETUP');
     console.log('='.repeat(60));
 
     // Merchant creates their Veridex wallet
@@ -41,14 +41,14 @@ async function main() {
         relayerUrl: process.env.RELAYER_URL,
     });
 
-    console.log('\n🔐 Merchant registering passkey...');
+    console.log('\nSECURITY Merchant registering passkey...');
     await merchantSdk.passkey.register('merchant@mystore.com', 'My Online Store');
     
     const merchantVault = merchantSdk.getVaultAddress();
-    console.log(`✅ Merchant vault: ${merchantVault}`);
+    console.log(`OK Merchant vault: ${merchantVault}`);
 
     // Register with payment gateway
-    console.log('\n📝 Registering with payment gateway...');
+    console.log('\nNOTE Registering with payment gateway...');
     
     const gatewayInterface = new ethers.Interface(GATEWAY_ABI);
     const registerData = gatewayInterface.encodeFunctionData('registerMerchant', [
@@ -62,16 +62,16 @@ async function main() {
         value: 0n,
     });
 
-    console.log(`✅ Merchant registered! TX: ${registerResult.transactionHash}`);
+    console.log(`OK Merchant registered! TX: ${registerResult.transactionHash}`);
 
     // =========================================================================
     // Part 2: Create Invoice
     // =========================================================================
     
-    console.log('\n📦 PART 2: CREATE INVOICE');
+    console.log('\nPACKAGE PART 2: CREATE INVOICE');
     console.log('='.repeat(60));
 
-    console.log('\n📄 Creating invoice for $100 order...');
+    console.log('\nDOC Creating invoice for $100 order...');
 
     const createInvoiceData = gatewayInterface.encodeFunctionData('createInvoice', [
         ethers.ZeroAddress, // Native token (ETH)
@@ -89,7 +89,7 @@ async function main() {
     // Parse InvoiceCreated event to get invoice ID
     const invoiceId = parseInvoiceCreatedEvent(invoiceResult.logs);
     
-    console.log(`✅ Invoice created!`);
+    console.log(`OK Invoice created!`);
     console.log(`   Invoice ID: ${invoiceId}`);
     console.log(`   Amount: 0.05 ETH`);
     console.log(`   Reference: ORDER-2024-001`);
@@ -97,14 +97,14 @@ async function main() {
 
     // Generate payment link
     const paymentLink = generatePaymentLink(invoiceId);
-    console.log(`\n🔗 Payment Link: ${paymentLink}`);
+    console.log(`\nLINK Payment Link: ${paymentLink}`);
     console.log(`   (Send this to customer)`);
 
     // =========================================================================
     // Part 3: Customer Payment
     // =========================================================================
     
-    console.log('\n📦 PART 3: CUSTOMER PAYMENT');
+    console.log('\nPACKAGE PART 3: CUSTOMER PAYMENT');
     console.log('='.repeat(60));
 
     // Customer creates their Veridex wallet
@@ -112,23 +112,23 @@ async function main() {
         relayerUrl: process.env.RELAYER_URL,
     });
 
-    console.log('\n🔐 Customer registering passkey...');
+    console.log('\nSECURITY Customer registering passkey...');
     await customerSdk.passkey.register('customer@email.com', 'My Wallet');
     
     const customerVault = customerSdk.getVaultAddress();
-    console.log(`✅ Customer vault: ${customerVault}`);
+    console.log(`OK Customer vault: ${customerVault}`);
 
     // Check balance
     const balance = await customerSdk.getBalance('native');
     console.log(`   Balance: ${formatEther(balance)} ETH`);
 
     if (balance < parseEther('0.05')) {
-        console.log('\n⚠️  Insufficient balance. Fund the customer vault first.');
+        console.log('\nWARN  Insufficient balance. Fund the customer vault first.');
         return;
     }
 
     // Pay invoice
-    console.log('\n💸 Paying invoice...');
+    console.log('\nPAYMENTS Paying invoice...');
 
     const payInvoiceData = gatewayInterface.encodeFunctionData('payInvoice', [
         invoiceId,
@@ -140,25 +140,25 @@ async function main() {
         value: parseEther('0.05'),
     });
 
-    console.log(`✅ Invoice paid!`);
+    console.log(`OK Invoice paid!`);
     console.log(`   TX: ${payResult.transactionHash}`);
 
     // =========================================================================
     // Part 4: Verify Payment
     // =========================================================================
     
-    console.log('\n📦 PART 4: VERIFY PAYMENT');
+    console.log('\nPACKAGE PART 4: VERIFY PAYMENT');
     console.log('='.repeat(60));
 
     // Merchant checks invoice status
-    console.log('\n🔍 Checking invoice status...');
+    console.log('\nVERIFY Checking invoice status...');
 
     const provider = new ethers.JsonRpcProvider('https://sepolia.base.org');
     const gatewayContract = new ethers.Contract(GATEWAY_ADDRESS, GATEWAY_ABI, provider);
     
     const invoice = await gatewayContract.getInvoice(invoiceId);
     
-    console.log(`\n📋 Invoice Details:`);
+    console.log(`\nNOTE Invoice Details:`);
     console.log(`   ID: ${invoice.id}`);
     console.log(`   Status: ${getStatusString(invoice.status)}`);
     console.log(`   Amount: ${formatEther(invoice.amount)} ETH`);
@@ -168,9 +168,9 @@ async function main() {
 
     // Check merchant balance
     const merchantBalance = await merchantSdk.getBalance('native', { forceRefresh: true });
-    console.log(`\n💰 Merchant balance: ${formatEther(merchantBalance)} ETH`);
+    console.log(`\nBALANCE Merchant balance: ${formatEther(merchantBalance)} ETH`);
 
-    console.log('\n🎉 Payment flow complete!');
+    console.log('\nDONE Payment flow complete!');
 }
 
 // ============================================================================
@@ -208,7 +208,7 @@ function getStatusString(status: number): string {
 
 async function webhookExample() {
     console.log('\n' + '='.repeat(60));
-    console.log('🔔 WEBHOOK INTEGRATION');
+    console.log(' WEBHOOK INTEGRATION');
     console.log('='.repeat(60));
 
     console.log(`
@@ -279,7 +279,7 @@ When integrating with your backend:
 
 async function pointOfSaleExample() {
     console.log('\n' + '='.repeat(60));
-    console.log('🏪 POINT OF SALE INTEGRATION');
+    console.log(' POINT OF SALE INTEGRATION');
     console.log('='.repeat(60));
 
     console.log(`

@@ -16,7 +16,7 @@ import { createSDK, SessionManager } from 'veridex-sdk';
 import { parseEther } from 'ethers';
 
 async function main() {
-    console.log('🔑 Veridex Session Key Example\n');
+    console.log(' Veridex Session Key Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
@@ -25,27 +25,27 @@ async function main() {
     
     const sdk = createSDK('base');
     
-    console.log('\n📡 SDK initialized');
-    console.log(`📍 Vault: ${sdk.getVaultAddress()}`);
+    console.log('\nRPC SDK initialized');
+    console.log(`LOCATION Vault: ${sdk.getVaultAddress()}`);
 
     // =========================================================================
     // Step 2: Create Session Manager
     // =========================================================================
     
-    console.log('\n🔧 Initializing session manager...');
+    console.log('\nTOOLS Initializing session manager...');
     
     const sessionManager = new SessionManager({
         sdk,
         storage: 'indexeddb', // Secure storage for session keys
     });
 
-    console.log('✅ Session manager ready');
+    console.log('OK Session manager ready');
 
     // =========================================================================
     // Step 3: Create a Session
     // =========================================================================
     
-    console.log('\n🔐 Creating session key...');
+    console.log('\nSECURITY Creating session key...');
     console.log('   (This requires ONE passkey signature)\n');
 
     try {
@@ -70,8 +70,8 @@ async function main() {
             allowedActions: ['transfer'], // No bridging
         });
 
-        console.log('✅ Session created successfully!');
-        console.log(`\n📋 Session Details:`);
+        console.log('OK Session created successfully!');
+        console.log(`\nNOTE Session Details:`);
         console.log(`   Session ID: ${session.id}`);
         console.log(`   Created: ${new Date(session.createdAt).toISOString()}`);
         console.log(`   Expires: ${new Date(session.expiresAt).toISOString()}`);
@@ -84,7 +84,7 @@ async function main() {
         // Step 4: Execute Transactions with Session
         // =====================================================================
         
-        console.log('\n🚀 Executing transactions with session key...');
+        console.log('\nSTART Executing transactions with session key...');
         console.log('   (No passkey prompts needed!)\n');
 
         // Transaction 1
@@ -95,7 +95,7 @@ async function main() {
             recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
             amount: parseEther('0.001'),
         }, session);
-        console.log(`   ✅ TX 1 complete: ${tx1.transactionHash.slice(0, 20)}...`);
+        console.log(`   OK TX 1 complete: ${tx1.transactionHash.slice(0, 20)}...`);
 
         // Transaction 2 (no passkey prompt!)
         console.log('   TX 2: Sending 0.002 ETH...');
@@ -105,7 +105,7 @@ async function main() {
             recipient: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199',
             amount: parseEther('0.002'),
         }, session);
-        console.log(`   ✅ TX 2 complete: ${tx2.transactionHash.slice(0, 20)}...`);
+        console.log(`   OK TX 2 complete: ${tx2.transactionHash.slice(0, 20)}...`);
 
         // Transaction 3 (still no prompt!)
         console.log('   TX 3: Sending 0.001 ETH...');
@@ -115,15 +115,15 @@ async function main() {
             recipient: '0xdD2FD4581271e230360230F9337D5c0430Bf44C0',
             amount: parseEther('0.001'),
         }, session);
-        console.log(`   ✅ TX 3 complete: ${tx3.transactionHash.slice(0, 20)}...`);
+        console.log(`   OK TX 3 complete: ${tx3.transactionHash.slice(0, 20)}...`);
 
-        console.log('\n🎉 All transactions executed without additional prompts!');
+        console.log('\nDONE All transactions executed without additional prompts!');
 
         // =====================================================================
         // Step 5: Check Session Status
         // =====================================================================
         
-        console.log('\n📊 Session Status:');
+        console.log('\n Session Status:');
         const status = await sessionManager.getSessionStatus(session.id);
         console.log(`   Transactions: ${status.transactionCount}`);
         console.log(`   Total Value Spent: ${status.totalValueSpent} wei`);
@@ -132,12 +132,12 @@ async function main() {
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error('\n❌ Error:', error.message);
+            console.error('\nERROR Error:', error.message);
             
             if (error.message.includes('exceeds')) {
-                console.log('\n💡 Transaction exceeds session limits.');
+                console.log('\n Transaction exceeds session limits.');
             } else if (error.message.includes('expired')) {
-                console.log('\n💡 Session has expired. Create a new one.');
+                console.log('\n Session has expired. Create a new one.');
             }
         }
     }
@@ -149,13 +149,13 @@ async function main() {
 
 async function sessionPersistence() {
     console.log('\n' + '='.repeat(50));
-    console.log('💾 Session Persistence');
+    console.log(' Session Persistence');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
     const sessionManager = new SessionManager({ sdk });
 
-    console.log('\n📋 Managing persisted sessions...\n');
+    console.log('\nNOTE Managing persisted sessions...\n');
 
     // List all active sessions
     const sessions = await sessionManager.listSessions();
@@ -168,15 +168,15 @@ async function sessionPersistence() {
 
     // Resume a session
     if (sessions.length > 0) {
-        console.log('\n🔄 Resuming first session...');
+        console.log('\nIN PROGRESS Resuming first session...');
         const resumedSession = await sessionManager.resumeSession(sessions[0].id);
-        console.log(`   ✅ Session resumed: ${resumedSession.id}`);
+        console.log(`   OK Session resumed: ${resumedSession.id}`);
     }
 
     // Clear expired sessions
-    console.log('\n🧹 Cleaning expired sessions...');
+    console.log('\n Cleaning expired sessions...');
     await sessionManager.cleanExpiredSessions();
-    console.log('   ✅ Cleanup complete');
+    console.log('   OK Cleanup complete');
 }
 
 // ============================================================================
@@ -185,7 +185,7 @@ async function sessionPersistence() {
 
 async function sessionEvents() {
     console.log('\n' + '='.repeat(50));
-    console.log('📡 Session Events');
+    console.log('RPC Session Events');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
@@ -193,26 +193,26 @@ async function sessionEvents() {
 
     // Subscribe to session events
     sessionManager.on('sessionCreated', (session) => {
-        console.log(`   🔑 Session created: ${session.id}`);
+        console.log(`    Session created: ${session.id}`);
     });
 
     sessionManager.on('transactionExecuted', (tx) => {
-        console.log(`   ✅ TX executed: ${tx.hash}`);
+        console.log(`   OK TX executed: ${tx.hash}`);
     });
 
     sessionManager.on('sessionExpiring', (session) => {
-        console.log(`   ⚠️  Session expiring soon: ${session.id}`);
+        console.log(`   WARN  Session expiring soon: ${session.id}`);
     });
 
     sessionManager.on('sessionExpired', (session) => {
-        console.log(`   ❌ Session expired: ${session.id}`);
+        console.log(`   ERROR Session expired: ${session.id}`);
     });
 
     sessionManager.on('limitReached', (session, limit) => {
-        console.log(`   🚫 Limit reached: ${limit} for ${session.id}`);
+        console.log(`    Limit reached: ${limit} for ${session.id}`);
     });
 
-    console.log('\n📋 Event listeners registered');
+    console.log('\nNOTE Event listeners registered');
     console.log('   Events will fire as sessions are used...\n');
 }
 

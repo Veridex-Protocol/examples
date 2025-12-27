@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 
 async function main() {
-    console.log('🚀 Deploying Veridex Payment Gateway\n');
+    console.log('START Deploying Veridex Payment Gateway\n');
 
     const [deployer] = await ethers.getSigners();
     console.log(`Deployer: ${deployer.address}`);
@@ -10,25 +10,25 @@ async function main() {
     console.log(`Balance: ${ethers.formatEther(balance)} ETH\n`);
 
     // Deploy PaymentGateway with deployer as initial owner
-    console.log('📦 Deploying PaymentGateway contract...');
+    console.log('PACKAGE Deploying PaymentGateway contract...');
     const PaymentGateway = await ethers.getContractFactory('VeridexPaymentGateway');
     const gateway = await PaymentGateway.deploy(deployer.address);
     
     await gateway.waitForDeployment();
     const address = await gateway.getAddress();
     
-    console.log(`✅ PaymentGateway deployed to: ${address}`);
+    console.log(`OK PaymentGateway deployed to: ${address}`);
 
     // Verify initial state
     const protocolFee = await gateway.protocolFeeBps();
     const owner = await gateway.owner();
     
-    console.log(`\n📊 Contract State:`);
+    console.log(`\n Contract State:`);
     console.log(`   Owner: ${owner}`);
     console.log(`   Protocol Fee: ${protocolFee} bps (${Number(protocolFee) / 100}%)`);
 
     // Example: Register a test merchant
-    console.log('\n🏪 Registering test merchant...');
+    console.log('\n Registering test merchant...');
     
     const testMerchant = {
         name: 'Test Store',
@@ -44,7 +44,7 @@ async function main() {
     await tx.wait();
 
     const merchantInfo = await gateway.getMerchant(deployer.address);
-    console.log(`   ✅ Merchant registered: ${merchantInfo.name}`);
+    console.log(`   OK Merchant registered: ${merchantInfo.name}`);
     console.log(`   Vault: ${merchantInfo.vaultAddress}`);
     console.log(`   Total Volume: ${ethers.formatEther(merchantInfo.totalVolume)} ETH`);
 
@@ -59,7 +59,7 @@ async function main() {
         timestamp: new Date().toISOString(),
     };
 
-    console.log('\n📋 Deployment Info:');
+    console.log('\nNOTE Deployment Info:');
     console.log(JSON.stringify(deploymentInfo, null, 2));
 
     return address;

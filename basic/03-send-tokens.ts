@@ -17,7 +17,7 @@ const TOKENS = {
 };
 
 async function main() {
-    console.log('💸 Veridex Token Transfer Example\n');
+    console.log('PAYMENTS Veridex Token Transfer Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
@@ -26,23 +26,23 @@ async function main() {
     
     const sdk = createSDK('base');
     
-    console.log('\n📡 SDK initialized for Base testnet');
+    console.log('\nRPC SDK initialized for Base testnet');
     
     const vaultAddress = sdk.getVaultAddress();
-    console.log(`📍 Sending from vault: ${vaultAddress}`);
+    console.log(`LOCATION Sending from vault: ${vaultAddress}`);
 
     // =========================================================================
     // Step 2: Check Balance Before Transfer
     // =========================================================================
     
-    console.log('\n💰 Checking balance before transfer...');
+    console.log('\nBALANCE Checking balance before transfer...');
     
     try {
         const balance = await sdk.getBalance('native');
         console.log(`   Current balance: ${formatEther(balance)} ETH`);
 
         if (balance < parseEther('0.001')) {
-            console.log('\n⚠️  Insufficient balance. Please fund your vault first.');
+            console.log('\nWARN  Insufficient balance. Please fund your vault first.');
             console.log(`   Vault address: ${vaultAddress}`);
             return;
         }
@@ -51,7 +51,7 @@ async function main() {
         // Step 3: Prepare Transfer
         // =====================================================================
         
-        console.log('\n📝 Preparing transfer...');
+        console.log('\nNOTE Preparing transfer...');
         
         const transferAmount = parseEther('0.001'); // 0.001 ETH
         
@@ -62,7 +62,7 @@ async function main() {
             amount: transferAmount,
         });
 
-        console.log(`\n📋 Transfer Details:`);
+        console.log(`\nNOTE Transfer Details:`);
         console.log(`   Token: ETH (native)`);
         console.log(`   Amount: ${formatEther(transferAmount)} ETH`);
         console.log(`   Recipient: ${RECIPIENT}`);
@@ -73,7 +73,7 @@ async function main() {
         // Step 4: Execute Transfer (with passkey signature)
         // =====================================================================
         
-        console.log('\n🔐 Signing with passkey...');
+        console.log('\nSECURITY Signing with passkey...');
         console.log('   (This would trigger biometric prompt in browser)\n');
 
         // Execute the transfer
@@ -84,8 +84,8 @@ async function main() {
             amount: transferAmount,
         });
 
-        console.log('✅ Transfer successful!');
-        console.log(`\n📋 Transaction Details:`);
+        console.log('OK Transfer successful!');
+        console.log(`\nNOTE Transaction Details:`);
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Block: ${result.blockNumber}`);
         console.log(`   Gas Used: ${result.gasUsed}`);
@@ -94,18 +94,18 @@ async function main() {
         // Step 5: Check Balance After Transfer
         // =====================================================================
         
-        console.log('\n💰 Balance after transfer:');
+        console.log('\nBALANCE Balance after transfer:');
         const newBalance = await sdk.getBalance('native', { forceRefresh: true });
         console.log(`   New balance: ${formatEther(newBalance)} ETH`);
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error('\n❌ Transfer failed:', error.message);
+            console.error('\nERROR Transfer failed:', error.message);
             
             if (error.message.includes('insufficient')) {
-                console.log('\n💡 Fund your vault with testnet ETH and try again.');
+                console.log('\n Fund your vault with testnet ETH and try again.');
             } else if (error.message.includes('cancelled')) {
-                console.log('\n💡 User cancelled the passkey signature.');
+                console.log('\n User cancelled the passkey signature.');
             }
         }
     }
@@ -117,14 +117,14 @@ async function main() {
 
 async function sendERC20() {
     console.log('\n' + '='.repeat(50));
-    console.log('🪙 ERC20 Token Transfer');
+    console.log(' ERC20 Token Transfer');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
     
     const amount = parseUnits('10', 6); // 10 USDC (6 decimals)
 
-    console.log('\n📋 Sending 10 USDC...');
+    console.log('\nNOTE Sending 10 USDC...');
 
     try {
         const result = await sdk.transfer({
@@ -133,11 +133,11 @@ async function sendERC20() {
             amount: amount,
         });
 
-        console.log('✅ USDC transfer successful!');
+        console.log('OK USDC transfer successful!');
         console.log(`   TX Hash: ${result.transactionHash}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
@@ -148,7 +148,7 @@ async function sendERC20() {
 
 async function batchTransfer() {
     console.log('\n' + '='.repeat(50));
-    console.log('📦 Batch Transfer (Multiple Recipients)');
+    console.log('PACKAGE Batch Transfer (Multiple Recipients)');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
@@ -159,7 +159,7 @@ async function batchTransfer() {
         { address: '0xdD2FD4581271e230360230F9337D5c0430Bf44C0', amount: parseEther('0.001') },
     ];
 
-    console.log('\n📋 Batch transfer to 3 recipients...');
+    console.log('\nNOTE Batch transfer to 3 recipients...');
     console.log('   (Single passkey signature for all transfers)\n');
 
     try {
@@ -185,7 +185,7 @@ async function batchTransfer() {
             },
         ]);
 
-        console.log('✅ Batch transfer successful!');
+        console.log('OK Batch transfer successful!');
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Recipients: ${recipients.length}`);
         console.log(`   Total sent: ${formatEther(
@@ -193,7 +193,7 @@ async function batchTransfer() {
         )} ETH`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
@@ -204,12 +204,12 @@ async function batchTransfer() {
 
 async function trackTransaction() {
     console.log('\n' + '='.repeat(50));
-    console.log('📍 Transaction Tracking');
+    console.log('LOCATION Transaction Tracking');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
 
-    console.log('\n🔄 Sending with real-time status updates...\n');
+    console.log('\nIN PROGRESS Sending with real-time status updates...\n');
 
     try {
         const result = await sdk.transfer({
@@ -221,31 +221,31 @@ async function trackTransaction() {
             onProgress: (status) => {
                 switch (status.state) {
                     case 'signing':
-                        console.log('   ⏳ Waiting for passkey signature...');
+                        console.log('   WAIT Waiting for passkey signature...');
                         break;
                     case 'broadcasting':
-                        console.log('   📡 Broadcasting transaction...');
+                        console.log('   RPC Broadcasting transaction...');
                         break;
                     case 'pending':
-                        console.log(`   ⏳ Pending (TX: ${status.hash?.slice(0, 10)}...)`);
+                        console.log(`   WAIT Pending (TX: ${status.hash?.slice(0, 10)}...)`);
                         break;
                     case 'confirming':
-                        console.log(`   🔄 Confirming (${status.confirmations}/${status.requiredConfirmations})`);
+                        console.log(`   IN PROGRESS Confirming (${status.confirmations}/${status.requiredConfirmations})`);
                         break;
                     case 'confirmed':
-                        console.log(`   ✅ Confirmed in block ${status.blockNumber}`);
+                        console.log(`   OK Confirmed in block ${status.blockNumber}`);
                         break;
                     case 'failed':
-                        console.log(`   ❌ Failed: ${status.error}`);
+                        console.log(`   ERROR Failed: ${status.error}`);
                         break;
                 }
             },
         });
 
-        console.log(`\n🎉 Transaction complete: ${result.transactionHash}`);
+        console.log(`\nDONE Transaction complete: ${result.transactionHash}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }

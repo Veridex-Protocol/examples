@@ -46,30 +46,30 @@ const GAME_ABI = [
 const GAME_CONTRACT = process.env.GAME_CONTRACT || '0x...';
 
 async function main() {
-    console.log('🎮 Veridex Gaming Integration\n');
+    console.log(' Veridex Gaming Integration\n');
     console.log('='.repeat(60));
 
     // =========================================================================
     // Player Setup
     // =========================================================================
     
-    console.log('\n📦 PLAYER SETUP');
+    console.log('\nPACKAGE PLAYER SETUP');
     console.log('='.repeat(60));
 
     const sdk = createSDK('base', {
         relayerUrl: process.env.RELAYER_URL, // Gasless for better UX
     });
 
-    console.log('\n🔐 Creating game account with passkey...');
+    console.log('\nSECURITY Creating game account with passkey...');
     await sdk.passkey.register('player@game.com', 'GamePlayer123');
     
     const playerWallet = sdk.getVaultAddress();
-    console.log(`✅ Wallet created: ${playerWallet}`);
+    console.log(`OK Wallet created: ${playerWallet}`);
 
     // Create player in game
     const gameIface = new ethers.Interface(GAME_ABI);
     
-    console.log('\n👤 Creating in-game character...');
+    console.log('\n Creating in-game character...');
     const createPlayerData = gameIface.encodeFunctionData('createPlayer', ['DragonSlayer']);
     
     const createResult = await sdk.execute({
@@ -78,19 +78,19 @@ async function main() {
         value: parseEther('0.01'), // Registration fee
     });
 
-    console.log('✅ Character created: DragonSlayer');
+    console.log('OK Character created: DragonSlayer');
     console.log(`   TX: ${createResult.transactionHash}`);
 
     // =========================================================================
     // Game Session (Session Keys for Gameplay)
     // =========================================================================
     
-    console.log('\n📦 GAME SESSION');
+    console.log('\nPACKAGE GAME SESSION');
     console.log('='.repeat(60));
 
     const sessionManager = new SessionManager({ sdk });
 
-    console.log('\n🎯 Creating game session...');
+    console.log('\n Creating game session...');
     console.log('   (One passkey sign = hours of uninterrupted gameplay)\n');
 
     // Create session for gameplay
@@ -103,7 +103,7 @@ async function main() {
         // allowedTargets: [GAME_CONTRACT],
     });
 
-    console.log('✅ Game session created!');
+    console.log('OK Game session created!');
     console.log(`   Duration: 4 hours`);
     console.log(`   Max per TX: 0.5 ETH`);
     console.log(`   Session total: 2 ETH`);
@@ -112,57 +112,57 @@ async function main() {
     // Gameplay Actions (No Biometric Prompts!)
     // =========================================================================
     
-    console.log('\n📦 GAMEPLAY ACTIONS');
+    console.log('\nPACKAGE GAMEPLAY ACTIONS');
     console.log('='.repeat(60));
 
-    console.log('\n🎮 Playing the game...\n');
+    console.log('\n Playing the game...\n');
 
     // Action 1: Buy health potions
-    console.log('   🧪 Buying 10 health potions...');
+    console.log('    Buying 10 health potions...');
     await sessionManager.executeWithSession({
         action: 'execute',
         target: GAME_CONTRACT,
         data: gameIface.encodeFunctionData('buyItem', [1, 10]), // Item ID 1 = health potion
         value: parseEther('0.01'),
     }, gameSession);
-    console.log('   ✅ 10x Health Potion acquired!');
+    console.log('   OK 10x Health Potion acquired!');
 
     // Action 2: Buy a sword
-    console.log('   ⚔️ Buying legendary sword...');
+    console.log('    Buying legendary sword...');
     await sessionManager.executeWithSession({
         action: 'execute',
         target: GAME_CONTRACT,
         data: gameIface.encodeFunctionData('buyItem', [42, 1]), // Item ID 42 = legendary sword
         value: parseEther('0.1'),
     }, gameSession);
-    console.log('   ✅ Legendary Sword acquired!');
+    console.log('   OK Legendary Sword acquired!');
 
     // Action 3: Equip the sword
-    console.log('   🛡️ Equipping sword...');
+    console.log('    Equipping sword...');
     await sessionManager.executeWithSession({
         action: 'execute',
         target: GAME_CONTRACT,
         data: gameIface.encodeFunctionData('equipItem', [42]),
         value: 0n,
     }, gameSession);
-    console.log('   ✅ Sword equipped!');
+    console.log('   OK Sword equipped!');
 
     // Action 4: Start a mission
-    console.log('   🗺️ Starting Dragon\'s Lair mission...');
+    console.log('    Starting Dragon\'s Lair mission...');
     await sessionManager.executeWithSession({
         action: 'execute',
         target: GAME_CONTRACT,
         data: gameIface.encodeFunctionData('startMission', [5]), // Mission ID 5
         value: 0n,
     }, gameSession);
-    console.log('   ✅ Mission started!');
+    console.log('   OK Mission started!');
 
     // Simulate gameplay...
-    console.log('   ⏳ Playing mission...');
+    console.log('   WAIT Playing mission...');
     await sleep(2000);
 
     // Action 5: Complete mission
-    console.log('   🏆 Completing mission...');
+    console.log('    Completing mission...');
     const missionProof = '0x' + '00'.repeat(64); // Mock proof
     await sessionManager.executeWithSession({
         action: 'execute',
@@ -170,28 +170,28 @@ async function main() {
         data: gameIface.encodeFunctionData('completeMission', [5, missionProof]),
         value: 0n,
     }, gameSession);
-    console.log('   ✅ Mission completed! +500 XP, +0.05 ETH');
+    console.log('   OK Mission completed! +500 XP, +0.05 ETH');
 
     // Action 6: Claim rewards
-    console.log('   💰 Claiming rewards...');
+    console.log('   BALANCE Claiming rewards...');
     await sessionManager.executeWithSession({
         action: 'execute',
         target: GAME_CONTRACT,
         data: gameIface.encodeFunctionData('claimRewards', []),
         value: 0n,
     }, gameSession);
-    console.log('   ✅ Rewards claimed!');
+    console.log('   OK Rewards claimed!');
 
-    console.log('\n🎉 6 game actions executed without ANY additional prompts!');
+    console.log('\nDONE 6 game actions executed without ANY additional prompts!');
 
     // =========================================================================
     // Tournament Entry
     // =========================================================================
     
-    console.log('\n📦 TOURNAMENT');
+    console.log('\nPACKAGE TOURNAMENT');
     console.log('='.repeat(60));
 
-    console.log('\n🏆 Joining weekend tournament...');
+    console.log('\n Joining weekend tournament...');
     
     await sessionManager.executeWithSession({
         action: 'execute',
@@ -200,7 +200,7 @@ async function main() {
         value: parseEther('0.1'), // Entry fee
     }, gameSession);
 
-    console.log('✅ Tournament entry confirmed!');
+    console.log('OK Tournament entry confirmed!');
     console.log('   Entry Fee: 0.1 ETH');
     console.log('   Prize Pool: 10 ETH');
     console.log('   Starts: Tomorrow 9:00 UTC');
@@ -209,11 +209,11 @@ async function main() {
     // Session Summary
     // =========================================================================
     
-    console.log('\n📦 SESSION SUMMARY');
+    console.log('\nPACKAGE SESSION SUMMARY');
     console.log('='.repeat(60));
 
     const status = await sessionManager.getSessionStatus(gameSession.id);
-    console.log(`\n📊 Game Session Stats:`);
+    console.log(`\n Game Session Stats:`);
     console.log(`   Actions executed: ${status.transactionCount}`);
     console.log(`   ETH spent: ${formatEther(status.totalValueSpent)}`);
     console.log(`   Time remaining: ${Math.floor(status.timeRemaining / 60)} minutes`);
@@ -226,7 +226,7 @@ async function main() {
 
 async function mobileGamePattern() {
     console.log('\n' + '='.repeat(60));
-    console.log('📱 MOBILE GAME INTEGRATION PATTERN');
+    console.log(' MOBILE GAME INTEGRATION PATTERN');
     console.log('='.repeat(60));
 
     console.log(`
@@ -313,7 +313,7 @@ async function mobileGamePattern() {
 
 async function playerTrading() {
     console.log('\n' + '='.repeat(60));
-    console.log('🔄 PLAYER-TO-PLAYER TRADING');
+    console.log('IN PROGRESS PLAYER-TO-PLAYER TRADING');
     console.log('='.repeat(60));
 
     const player1Sdk = createSDK('base');
@@ -325,12 +325,12 @@ async function playerTrading() {
 
     const gameIface = new ethers.Interface(GAME_ABI);
 
-    console.log('\n🤝 Setting up trade...');
+    console.log('\n Setting up trade...');
     console.log('   Player 1 offers: Legendary Sword, 5 Gems');
     console.log('   Player 2 offers: Dragon Shield, 10 Gold Bars');
 
     // Player 1 creates trade offer
-    console.log('\n📝 Player 1 creating trade offer...');
+    console.log('\nNOTE Player 1 creating trade offer...');
     
     const session1 = await sessionManager1.createSession({
         duration: 3600,
@@ -347,10 +347,10 @@ async function playerTrading() {
         ]),
         value: 0n,
     }, session1);
-    console.log('   ✅ Trade offer created');
+    console.log('   OK Trade offer created');
 
     // Player 2 accepts trade
-    console.log('\n✅ Player 2 accepting trade...');
+    console.log('\nOK Player 2 accepting trade...');
     
     const session2 = await sessionManager2.createSession({
         duration: 3600,
@@ -364,9 +364,9 @@ async function playerTrading() {
         data: gameIface.encodeFunctionData('acceptTrade', [123]), // Trade ID
         value: 0n,
     }, session2);
-    console.log('   ✅ Trade completed!');
+    console.log('   OK Trade completed!');
 
-    console.log('\n🎉 Items swapped atomically!');
+    console.log('\nDONE Items swapped atomically!');
 }
 
 // ============================================================================

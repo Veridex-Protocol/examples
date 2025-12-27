@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 
 async function main() {
-    console.log('🚀 Deploying Veridex Example Contracts\n');
+    console.log('START Deploying Veridex Example Contracts\n');
     console.log('='.repeat(50));
 
     const [deployer] = await ethers.getSigners();
@@ -14,40 +14,40 @@ async function main() {
     // 1. Deploy Payment Gateway
     // =========================================================================
     
-    console.log('📦 Deploying PaymentGateway...');
+    console.log('PACKAGE Deploying PaymentGateway...');
     const PaymentGateway = await ethers.getContractFactory('VeridexPaymentGateway');
     const gateway = await PaymentGateway.deploy(deployer.address);
     await gateway.waitForDeployment();
     deployments['PaymentGateway'] = await gateway.getAddress();
-    console.log(`   ✅ PaymentGateway: ${deployments['PaymentGateway']}`);
+    console.log(`   OK PaymentGateway: ${deployments['PaymentGateway']}`);
 
     // =========================================================================
     // 2. Deploy NFT Gated Access
     // =========================================================================
     
-    console.log('📦 Deploying NFTGatedAccess...');
+    console.log('PACKAGE Deploying NFTGatedAccess...');
     const NFTGatedAccess = await ethers.getContractFactory('VeridexNFTGatedAccess');
     const nftAccess = await NFTGatedAccess.deploy();
     await nftAccess.waitForDeployment();
     deployments['NFTGatedAccess'] = await nftAccess.getAddress();
-    console.log(`   ✅ NFTGatedAccess: ${deployments['NFTGatedAccess']}`);
+    console.log(`   OK NFTGatedAccess: ${deployments['NFTGatedAccess']}`);
 
     // =========================================================================
     // 3. Deploy Subscription Manager
     // =========================================================================
     
-    console.log('📦 Deploying SubscriptionManager...');
+    console.log('PACKAGE Deploying SubscriptionManager...');
     const SubscriptionManager = await ethers.getContractFactory('VeridexSubscriptionManager');
     const subscription = await SubscriptionManager.deploy();
     await subscription.waitForDeployment();
     deployments['SubscriptionManager'] = await subscription.getAddress();
-    console.log(`   ✅ SubscriptionManager: ${deployments['SubscriptionManager']}`);
+    console.log(`   OK SubscriptionManager: ${deployments['SubscriptionManager']}`);
 
     // =========================================================================
     // 4. Deploy Cross-Chain Escrow
     // =========================================================================
     
-    console.log('📦 Deploying CrossChainEscrow...');
+    console.log('PACKAGE Deploying CrossChainEscrow...');
     
     // Wormhole Core Bridge addresses
     const wormholeAddresses: Record<string, string> = {
@@ -75,14 +75,14 @@ async function main() {
     );
     await escrow.waitForDeployment();
     deployments['CrossChainEscrow'] = await escrow.getAddress();
-    console.log(`   ✅ CrossChainEscrow: ${deployments['CrossChainEscrow']}`);
+    console.log(`   OK CrossChainEscrow: ${deployments['CrossChainEscrow']}`);
 
     // =========================================================================
     // Summary
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 DEPLOYMENT SUMMARY');
+    console.log('NOTE DEPLOYMENT SUMMARY');
     console.log('='.repeat(50));
     console.log(`\nNetwork: ${network.name} (Chain ID: ${chainId})`);
     console.log('\nContracts:');
@@ -108,7 +108,7 @@ async function main() {
         contracts: deployments,
     }, null, 2));
 
-    console.log(`\n✅ Deployment addresses saved to ${deploymentsPath}`);
+    console.log(`\nOK Deployment addresses saved to ${deploymentsPath}`);
 }
 
 main()

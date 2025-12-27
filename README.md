@@ -56,13 +56,13 @@ examples/
 
 | Chain | Network | Status |
 |-------|---------|--------|
-| Base | Testnet/Mainnet | ✅ Hub Chain |
-| Optimism | Testnet/Mainnet | ✅ Spoke |
-| Arbitrum | Testnet/Mainnet | ✅ Spoke |
-| Solana | Devnet/Mainnet | ✅ Spoke |
-| Sui | Testnet/Mainnet | ✅ Spoke |
-| Aptos | Testnet/Mainnet | ✅ Spoke |
-| Starknet | Sepolia/Mainnet | ✅ Spoke |
+| Base | Testnet/Mainnet | OK Hub Chain |
+| Optimism | Testnet/Mainnet | OK Spoke |
+| Arbitrum | Testnet/Mainnet | OK Spoke |
+| Solana | Devnet/Mainnet | OK Spoke |
+| Sui | Testnet/Mainnet | OK Spoke |
+| Aptos | Testnet/Mainnet | OK Spoke |
+| Starknet | Sepolia/Mainnet | OK Spoke |
 
 ## Key Concepts
 

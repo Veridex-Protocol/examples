@@ -18,19 +18,19 @@ const CONTRACTS = {
 };
 
 async function main() {
-    console.log('📦 Veridex Batch Operations Example\n');
+    console.log('PACKAGE Veridex Batch Operations Example\n');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
     const sessionManager = new SessionManager({ sdk });
 
-    console.log('\n📡 SDK initialized');
+    console.log('\nRPC SDK initialized');
 
     // =========================================================================
     // Create a Session for Batch Operations
     // =========================================================================
     
-    console.log('\n🔐 Creating session for batch operations...');
+    console.log('\nSECURITY Creating session for batch operations...');
 
     const session = await sessionManager.createSession({
         duration: 3600, // 1 hour
@@ -40,14 +40,14 @@ async function main() {
         allowedActions: ['transfer', 'execute', 'approve'],
     });
 
-    console.log(`✅ Session created: ${session.id}`);
+    console.log(`OK Session created: ${session.id}`);
 
     // =========================================================================
     // Example 1: Multi-Send (Airdrop Pattern)
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📬 Example 1: Multi-Send (Airdrop)');
+    console.log(' Example 1: Multi-Send (Airdrop)');
     console.log('='.repeat(50));
 
     const recipients = [
@@ -58,7 +58,7 @@ async function main() {
         { address: '0x5555555555555555555555555555555555555555', amount: parseEther('0.01') },
     ];
 
-    console.log(`\n📋 Sending to ${recipients.length} recipients in one transaction...`);
+    console.log(`\nNOTE Sending to ${recipients.length} recipients in one transaction...`);
 
     try {
         const result = await sessionManager.executeBatchWithSession(
@@ -71,14 +71,14 @@ async function main() {
             session
         );
 
-        console.log('✅ Multi-send complete!');
+        console.log('OK Multi-send complete!');
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Recipients: ${recipients.length}`);
         console.log(`   Total: ${formatEther(recipients.reduce((s, r) => s + r.amount, 0n))} ETH`);
         console.log(`   Gas Used: ${result.gasUsed}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 
@@ -87,7 +87,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('💹 Example 2: DeFi Workflow');
+    console.log(' Example 2: DeFi Workflow');
     console.log('='.repeat(50));
 
     console.log(`
@@ -130,13 +130,13 @@ Executing complex DeFi workflow:
             },
         ], session);
 
-        console.log('✅ DeFi workflow complete!');
+        console.log('OK DeFi workflow complete!');
         console.log(`   TX Hash: ${workflow.transactionHash}`);
         console.log(`   Operations: 4`);
         console.log(`   Gas Saved: ~60% vs individual transactions`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 
@@ -145,7 +145,7 @@ Executing complex DeFi workflow:
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('🎮 Example 3: Gaming Actions');
+    console.log(' Example 3: Gaming Actions');
     console.log('='.repeat(50));
 
     console.log(`
@@ -189,13 +189,13 @@ Simulating game session:
             },
         ], session);
 
-        console.log('✅ Game actions complete!');
+        console.log('OK Game actions complete!');
         console.log(`   All items purchased and equipped`);
         console.log(`   Tournament entry confirmed`);
         console.log(`   TX: ${gameActions.transactionHash}`);
     } catch (error) {
         if (error instanceof Error) {
-            console.log(`❌ Error: ${error.message}`);
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 
@@ -204,7 +204,7 @@ Simulating game session:
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📊 Session Summary');
+    console.log(' Session Summary');
     console.log('='.repeat(50));
 
     const status = await sessionManager.getSessionStatus(session.id);

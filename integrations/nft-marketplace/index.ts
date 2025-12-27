@@ -36,7 +36,7 @@ const MARKETPLACE_ADDRESS = process.env.MARKETPLACE_ADDRESS || '0x...';
 const NFT_CONTRACT = '0x1234567890123456789012345678901234567890'; // Example NFT
 
 async function main() {
-    console.log('🖼️ Veridex NFT Marketplace Integration\n');
+    console.log(' Veridex NFT Marketplace Integration\n');
     console.log('='.repeat(60));
 
     // =========================================================================
@@ -46,7 +46,7 @@ async function main() {
     const sellerSdk = createSDK('base', { relayerUrl: process.env.RELAYER_URL });
     const buyerSdk = createSDK('base', { relayerUrl: process.env.RELAYER_URL });
 
-    console.log('\n👤 Setting up users...');
+    console.log('\n Setting up users...');
     
     await sellerSdk.passkey.register('seller@nft.com', 'NFT Seller');
     await buyerSdk.passkey.register('buyer@nft.com', 'NFT Buyer');
@@ -61,7 +61,7 @@ async function main() {
     // Part 1: List NFT for Sale
     // =========================================================================
     
-    console.log('\n📦 PART 1: LIST NFT FOR SALE');
+    console.log('\nPACKAGE PART 1: LIST NFT FOR SALE');
     console.log('='.repeat(60));
 
     const marketplaceIface = new ethers.Interface(MARKETPLACE_ABI);
@@ -69,7 +69,7 @@ async function main() {
     const tokenId = 42;
     const listPrice = parseEther('0.5');
 
-    console.log('\n🎨 Seller listing NFT #42...');
+    console.log('\n Seller listing NFT #42...');
     console.log(`   Collection: ${NFT_CONTRACT}`);
     console.log(`   Token ID: ${tokenId}`);
     console.log(`   Price: ${formatEther(listPrice)} ETH`);
@@ -87,7 +87,7 @@ async function main() {
         data: approveData,
         value: 0n,
     });
-    console.log('   ✅ Marketplace approved');
+    console.log('   OK Marketplace approved');
 
     // List the NFT
     console.log('   Step 2: Creating listing...');
@@ -105,25 +105,25 @@ async function main() {
     });
 
     const listingId = parseListedEvent(listResult.logs);
-    console.log(`   ✅ NFT listed! Listing ID: ${listingId}`);
+    console.log(`   OK NFT listed! Listing ID: ${listingId}`);
 
     // =========================================================================
     // Part 2: Browse and Buy NFT
     // =========================================================================
     
-    console.log('\n📦 PART 2: BUY NFT');
+    console.log('\nPACKAGE PART 2: BUY NFT');
     console.log('='.repeat(60));
 
     // Check buyer balance
     const buyerBalance = await buyerSdk.getBalance('native');
-    console.log(`\n💰 Buyer balance: ${formatEther(buyerBalance)} ETH`);
+    console.log(`\nBALANCE Buyer balance: ${formatEther(buyerBalance)} ETH`);
 
     if (buyerBalance < listPrice) {
-        console.log('⚠️  Insufficient balance to buy NFT');
+        console.log('WARN  Insufficient balance to buy NFT');
         return;
     }
 
-    console.log('\n🛒 Buying NFT #42...');
+    console.log('\n Buying NFT #42...');
 
     const buyData = marketplaceIface.encodeFunctionData('buyNFT', [listingId]);
 
@@ -133,7 +133,7 @@ async function main() {
         value: listPrice,
     });
 
-    console.log(`✅ NFT purchased!`);
+    console.log(`OK NFT purchased!`);
     console.log(`   TX: ${buyResult.transactionHash}`);
 
     // Verify ownership transfer
@@ -141,23 +141,23 @@ async function main() {
     const nftContract = new ethers.Contract(NFT_CONTRACT, ERC721_ABI, provider);
     const newOwner = await nftContract.ownerOf(tokenId);
     
-    console.log(`\n🔍 Verifying ownership...`);
+    console.log(`\nVERIFY Verifying ownership...`);
     console.log(`   New owner: ${newOwner}`);
     console.log(`   Expected: ${buyerVault}`);
-    console.log(`   Match: ${newOwner.toLowerCase() === buyerVault.toLowerCase() ? '✅' : '❌'}`);
+    console.log(`   Match: ${newOwner.toLowerCase() === buyerVault.toLowerCase() ? 'OK' : 'ERROR'}`);
 
     // =========================================================================
     // Part 3: Offer System
     // =========================================================================
     
-    console.log('\n📦 PART 3: MAKE AND ACCEPT OFFERS');
+    console.log('\nPACKAGE PART 3: MAKE AND ACCEPT OFFERS');
     console.log('='.repeat(60));
 
     // Seller lists another NFT
     const tokenId2 = 43;
     const listPrice2 = parseEther('1.0');
 
-    console.log('\n📄 Seller lists NFT #43 for 1 ETH...');
+    console.log('\nDOC Seller lists NFT #43 for 1 ETH...');
     
     await sellerSdk.execute({
         target: NFT_CONTRACT,
@@ -171,11 +171,11 @@ async function main() {
         value: 0n,
     });
     const listingId2 = parseListedEvent(list2Result.logs);
-    console.log(`   ✅ Listed with ID: ${listingId2}`);
+    console.log(`   OK Listed with ID: ${listingId2}`);
 
     // Buyer makes an offer below asking price
     const offerAmount = parseEther('0.8');
-    console.log(`\n💬 Buyer makes offer of ${formatEther(offerAmount)} ETH...`);
+    console.log(`\nCHAT Buyer makes offer of ${formatEther(offerAmount)} ETH...`);
 
     const offerData = marketplaceIface.encodeFunctionData('makeOffer', [
         listingId2,
@@ -187,10 +187,10 @@ async function main() {
         data: offerData,
         value: offerAmount, // Offer is escrowed
     });
-    console.log('   ✅ Offer submitted');
+    console.log('   OK Offer submitted');
 
     // Seller accepts the offer
-    console.log('\n✅ Seller accepts offer...');
+    console.log('\nOK Seller accepts offer...');
     
     const acceptData = marketplaceIface.encodeFunctionData('acceptOffer', [
         listingId2,
@@ -202,9 +202,9 @@ async function main() {
         data: acceptData,
         value: 0n,
     });
-    console.log('   ✅ Offer accepted! NFT transferred.');
+    console.log('   OK Offer accepted! NFT transferred.');
 
-    console.log('\n🎉 Marketplace flow complete!');
+    console.log('\nDONE Marketplace flow complete!');
 }
 
 // ============================================================================
@@ -213,7 +213,7 @@ async function main() {
 
 async function batchListingExample() {
     console.log('\n' + '='.repeat(60));
-    console.log('📦 BATCH LISTING WITH SESSION KEYS');
+    console.log('PACKAGE BATCH LISTING WITH SESSION KEYS');
     console.log('='.repeat(60));
 
     const sdk = createSDK('base');
@@ -226,7 +226,7 @@ async function batchListingExample() {
         allowedActions: ['execute'],
     });
 
-    console.log('\n🎨 Batch listing 5 NFTs with single passkey signature...\n');
+    console.log('\n Batch listing 5 NFTs with single passkey signature...\n');
 
     const nftIface = new ethers.Interface(ERC721_ABI);
     const marketplaceIface = new ethers.Interface(MARKETPLACE_ABI);
@@ -260,7 +260,7 @@ async function batchListingExample() {
 
     const result = await sessionManager.executeBatchWithSession(operations, session);
 
-    console.log(`✅ All ${nftsToList.length} NFTs listed in single transaction!`);
+    console.log(`OK All ${nftsToList.length} NFTs listed in single transaction!`);
     console.log(`   TX: ${result.transactionHash}`);
     console.log(`   Gas saved: ~80% vs individual transactions`);
 }
@@ -271,14 +271,14 @@ async function batchListingExample() {
 
 async function viewCollection() {
     console.log('\n' + '='.repeat(60));
-    console.log('🖼️ VIEW NFT COLLECTION');
+    console.log(' VIEW NFT COLLECTION');
     console.log('='.repeat(60));
 
     const sdk = createSDK('base');
     const vaultAddress = sdk.getVaultAddress();
 
-    console.log(`\n📍 Vault: ${vaultAddress}`);
-    console.log('\n🔍 Fetching owned NFTs...\n');
+    console.log(`\nLOCATION Vault: ${vaultAddress}`);
+    console.log('\nVERIFY Fetching owned NFTs...\n');
 
     const provider = new ethers.JsonRpcProvider('https://sepolia.base.org');
     const nftContract = new ethers.Contract(NFT_CONTRACT, ERC721_ABI, provider);

@@ -1,7 +1,7 @@
 import { ethers } from 'hardhat';
 
 async function main() {
-    console.log('🚀 Deploying Veridex Subscription Manager\n');
+    console.log('START Deploying Veridex Subscription Manager\n');
 
     const [deployer] = await ethers.getSigners();
     console.log(`Deployer: ${deployer.address}`);
@@ -10,17 +10,17 @@ async function main() {
     console.log(`Balance: ${ethers.formatEther(balance)} ETH\n`);
 
     // Deploy SubscriptionManager
-    console.log('📦 Deploying SubscriptionManager contract...');
+    console.log('PACKAGE Deploying SubscriptionManager contract...');
     const SubscriptionManager = await ethers.getContractFactory('VeridexSubscriptionManager');
     const subscription = await SubscriptionManager.deploy();
     
     await subscription.waitForDeployment();
     const address = await subscription.getAddress();
     
-    console.log(`✅ SubscriptionManager deployed to: ${address}`);
+    console.log(`OK SubscriptionManager deployed to: ${address}`);
 
     // Create some example plans
-    console.log('\n📝 Creating example subscription plans...');
+    console.log('\nNOTE Creating example subscription plans...');
 
     // Basic Plan - 0.01 ETH/month, 7 day trial
     const basicPlanTx = await subscription.createPlan(
@@ -32,7 +32,7 @@ async function main() {
         3 * 24 * 60 * 60 // 3 day grace period
     );
     await basicPlanTx.wait();
-    console.log('   ✅ Basic Plan created');
+    console.log('   OK Basic Plan created');
 
     // Pro Plan - 0.05 ETH/month, 14 day trial
     const proPlanTx = await subscription.createPlan(
@@ -44,7 +44,7 @@ async function main() {
         5 * 24 * 60 * 60 // 5 day grace period
     );
     await proPlanTx.wait();
-    console.log('   ✅ Pro Plan created');
+    console.log('   OK Pro Plan created');
 
     // Enterprise Plan - 0.2 ETH/month, no trial
     const enterprisePlanTx = await subscription.createPlan(
@@ -56,11 +56,11 @@ async function main() {
         7 * 24 * 60 * 60 // 7 day grace period
     );
     await enterprisePlanTx.wait();
-    console.log('   ✅ Enterprise Plan created');
+    console.log('   OK Enterprise Plan created');
 
     // Verify plans
     const planCount = await subscription.planCount();
-    console.log(`\n📊 Total Plans Created: ${planCount}`);
+    console.log(`\n Total Plans Created: ${planCount}`);
 
     for (let i = 1; i <= Number(planCount); i++) {
         const plan = await subscription.getPlan(i);
@@ -72,7 +72,7 @@ async function main() {
 
     // Save deployment info
     const network = await ethers.provider.getNetwork();
-    console.log('\n📋 Deployment Info:');
+    console.log('\nNOTE Deployment Info:');
     console.log(JSON.stringify({
         network: network.name,
         chainId: network.chainId.toString(),

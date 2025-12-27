@@ -103,7 +103,7 @@ class DeFiVaultManager {
         maxDailyVolume: bigint,
         durationDays: number
     ): Promise<string> {
-        console.log('🔑 Creating DeFi session key...');
+        console.log(' Creating DeFi session key...');
 
         // Get vault addresses for allowed protocols
         const allowedContracts = this.availableVaults
@@ -122,7 +122,7 @@ class DeFiVaultManager {
         //     },
         // });
 
-        console.log(`   ✅ Session created: ${sessionId}`);
+        console.log(`   OK Session created: ${sessionId}`);
         console.log(`   Allowed protocols: ${allowedProtocols.join(', ')}`);
         console.log(`   Max daily volume: ${ethers.formatEther(maxDailyVolume)} ETH`);
         console.log(`   Expires in: ${durationDays} days`);
@@ -159,7 +159,7 @@ class DeFiVaultManager {
         const vault = this.availableVaults.find(v => v.address === vaultAddress);
         if (!vault) throw new Error('Vault not found');
 
-        console.log(`\n📥 Depositing into ${vault.name}...`);
+        console.log(`\n Depositing into ${vault.name}...`);
         console.log(`   Amount: ${ethers.formatEther(amount)} ${vault.token === ethers.ZeroAddress ? 'ETH' : 'tokens'}`);
         console.log(`   Current APY: ${vault.apy}%`);
 
@@ -175,7 +175,7 @@ class DeFiVaultManager {
             entryTime: new Date(),
         });
 
-        console.log(`   ✅ Deposited! TX: ${txHash.slice(0, 20)}...`);
+        console.log(`   OK Deposited! TX: ${txHash.slice(0, 20)}...`);
         console.log(`   Position ID: ${positionId.slice(0, 20)}...`);
 
         return txHash;
@@ -193,7 +193,7 @@ class DeFiVaultManager {
 
         const withdrawAmount = amount || position.deposited;
 
-        console.log(`\n📤 Withdrawing from ${position.vault.name}...`);
+        console.log(`\nSEND Withdrawing from ${position.vault.name}...`);
         console.log(`   Amount: ${ethers.formatEther(withdrawAmount)}`);
 
         // Calculate simulated earnings
@@ -211,7 +211,7 @@ class DeFiVaultManager {
             position.deposited -= amount;
         }
 
-        console.log(`   ✅ Withdrawn! TX: ${txHash.slice(0, 20)}...`);
+        console.log(`   OK Withdrawn! TX: ${txHash.slice(0, 20)}...`);
 
         return txHash;
     }
@@ -223,12 +223,12 @@ class DeFiVaultManager {
         const position = this.positions.get(positionId);
         if (!position) throw new Error('Position not found');
 
-        console.log(`\n🎁 Claiming rewards from ${position.vault.name}...`);
+        console.log(`\nREWARD Claiming rewards from ${position.vault.name}...`);
 
         // In production, call the actual vault contract
         const txHash = ethers.id(`claim:${positionId}:${Date.now()}`);
 
-        console.log(`   ✅ Rewards claimed! TX: ${txHash.slice(0, 20)}...`);
+        console.log(`   OK Rewards claimed! TX: ${txHash.slice(0, 20)}...`);
 
         return txHash;
     }
@@ -240,7 +240,7 @@ class DeFiVaultManager {
         strategy: Strategy,
         totalAmount: bigint
     ): Promise<void> {
-        console.log(`\n🎯 Executing Strategy: ${strategy.name}`);
+        console.log(`\n Executing Strategy: ${strategy.name}`);
         console.log(`   Description: ${strategy.description}`);
         console.log(`   Risk Level: ${strategy.riskLevel}`);
         console.log(`   Target APY: ${strategy.targetApy}%`);
@@ -258,7 +258,7 @@ class DeFiVaultManager {
         // Allocate funds across vaults
         const allocation = this.calculateAllocation(eligibleVaults, strategy);
 
-        console.log(`\n📊 Allocation:`);
+        console.log(`\n Allocation:`);
         for (const [vault, percentage] of allocation) {
             const amount = (totalAmount * BigInt(percentage)) / 100n;
             console.log(`   ${vault.name}: ${percentage}% (${ethers.formatEther(amount)})`);
@@ -268,7 +268,7 @@ class DeFiVaultManager {
             }
         }
 
-        console.log(`\n✅ Strategy executed successfully!`);
+        console.log(`\nOK Strategy executed successfully!`);
     }
 
     /**
@@ -337,7 +337,7 @@ class DeFiVaultManager {
 }
 
 async function main() {
-    console.log('💰 Veridex DeFi Yield Vault Integration\n');
+    console.log('BALANCE Veridex DeFi Yield Vault Integration\n');
     console.log('='.repeat(50));
 
     const defi = new DeFiVaultManager('base-sepolia');
@@ -346,7 +346,7 @@ async function main() {
     // Step 1: View available yield vaults
     // =========================================================================
     
-    console.log('\n📋 Step 1: Available Yield Vaults\n');
+    console.log('\nNOTE Step 1: Available Yield Vaults\n');
     
     const vaults = defi.getAvailableVaults();
     console.log('Vault                  Protocol     APY');
@@ -360,7 +360,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 2: Create DeFi Session Key\n');
+    console.log('NOTE Step 2: Create DeFi Session Key\n');
 
     const vaultAddress = '0x' + 'user'.repeat(10);
     await defi.createDeFiSession(
@@ -375,7 +375,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 3: Execute Yield Strategy\n');
+    console.log('NOTE Step 3: Execute Yield Strategy\n');
 
     const conservativeStrategy: Strategy = {
         name: 'Conservative Yield',
@@ -392,7 +392,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📋 Step 4: Portfolio Summary\n');
+    console.log('NOTE Step 4: Portfolio Summary\n');
 
     const portfolio = defi.getPortfolioSummary();
     console.log(`Total Deposited: ${ethers.formatEther(portfolio.totalDeposited)} ETH`);
@@ -405,7 +405,7 @@ async function main() {
     // =========================================================================
     
     console.log('\n' + '='.repeat(50));
-    console.log('📚 Integration Guide');
+    console.log('DOCS Integration Guide');
     console.log('='.repeat(50));
 
     console.log(`
@@ -455,7 +455,7 @@ async function main() {
     });
     `);
 
-    console.log('\n✅ DeFi integration example complete!');
+    console.log('\nOK DeFi integration example complete!');
 }
 
 main().catch(console.error);

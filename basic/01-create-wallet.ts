@@ -11,23 +11,23 @@
 import { createSDK, getSupportedChains, getHubChains } from 'veridex-sdk';
 
 async function main() {
-    console.log('🔐 Veridex Wallet Creation Example\n');
+    console.log('SECURITY Veridex Wallet Creation Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
     // Step 1: Initialize SDK (just specify chain name!)
     // =========================================================================
     
-    console.log('\n📡 Initializing SDK for Base testnet...');
+    console.log('\nRPC Initializing SDK for Base testnet...');
     
     // The simplest way to create an SDK instance
     // Default network is 'testnet'
     const sdk = createSDK('base');
     
-    console.log('✅ SDK initialized successfully');
+    console.log('OK SDK initialized successfully');
     
     // Show supported chains
-    console.log('\n📋 Supported chains:');
+    console.log('\nNOTE Supported chains:');
     const chains = getSupportedChains();
     console.log(`   Total: ${chains.length} chains`);
     console.log(`   Hub chains: ${getHubChains().join(', ')}`);
@@ -36,7 +36,7 @@ async function main() {
     // Step 2: Register a Passkey
     // =========================================================================
     
-    console.log('\n🔑 Registering passkey...');
+    console.log('\n Registering passkey...');
     console.log('   (In a browser, this would trigger biometric prompt)\n');
 
     try {
@@ -47,7 +47,7 @@ async function main() {
             'My First Wallet'     // Wallet name
         );
 
-        console.log('✅ Passkey registered successfully!');
+        console.log('OK Passkey registered successfully!');
         console.log(`   Credential ID: ${credential.credentialId.slice(0, 20)}...`);
         console.log(`   Key Hash: ${credential.keyHash}`);
         console.log(`   Public Key X: ${credential.publicKey.x.slice(0, 20)}...`);
@@ -57,13 +57,13 @@ async function main() {
         // Step 3: Get Your Vault Address
         // =====================================================================
         
-        console.log('\n📍 Computing vault address...');
+        console.log('\nLOCATION Computing vault address...');
         
         // The vault address is deterministic - derived from your passkey
         // It's the SAME on all EVM chains!
         const vaultAddress = sdk.getVaultAddress();
         
-        console.log(`\n🎉 Your vault address: ${vaultAddress}`);
+        console.log(`\nDONE Your vault address: ${vaultAddress}`);
         console.log('\n   This address is the same on:');
         console.log('   • Base');
         console.log('   • Optimism');
@@ -75,11 +75,11 @@ async function main() {
         // Step 4: Get Unified Identity
         // =====================================================================
         
-        console.log('\n🌐 Getting unified cross-chain identity...');
+        console.log('\nNETWORK Getting unified cross-chain identity...');
         
         const identity = await sdk.getUnifiedIdentity();
         
-        console.log('\n📋 Unified Identity:');
+        console.log('\nNOTE Unified Identity:');
         console.log(`   Key Hash: ${identity.keyHash}`);
         console.log(`   Primary Address: ${identity.primaryAddress}`);
         console.log(`   Chain Addresses:`);
@@ -93,7 +93,7 @@ async function main() {
         // =====================================================================
         
         console.log('\n' + '='.repeat(50));
-        console.log('🚀 Next Steps:');
+        console.log('START Next Steps:');
         console.log('='.repeat(50));
         console.log(`
 1. Fund your vault at: ${vaultAddress}
@@ -112,12 +112,12 @@ async function main() {
         // Handle WebAuthn errors gracefully
         if (error instanceof Error) {
             if (error.message.includes('not supported')) {
-                console.log('\n⚠️  WebAuthn is not supported in this environment.');
+                console.log('\nWARN  WebAuthn is not supported in this environment.');
                 console.log('   Please run this example in a browser with WebAuthn support.');
             } else if (error.message.includes('cancelled')) {
-                console.log('\n⚠️  User cancelled the passkey registration.');
+                console.log('\nWARN  User cancelled the passkey registration.');
             } else {
-                console.error('\n❌ Error:', error.message);
+                console.error('\nERROR Error:', error.message);
             }
         }
     }
@@ -129,7 +129,7 @@ async function main() {
 
 async function showMultiChainExample() {
     console.log('\n' + '='.repeat(50));
-    console.log('🔗 Multi-Chain SDK Examples');
+    console.log('LINK Multi-Chain SDK Examples');
     console.log('='.repeat(50));
 
     // Create SDKs for different chains
@@ -138,7 +138,7 @@ async function showMultiChainExample() {
     const arbitrumSdk = createSDK('arbitrum');
     const solanaSdk = createSDK('solana');
 
-    console.log('\n✅ Created SDKs for:');
+    console.log('\nOK Created SDKs for:');
     console.log('   • Base (testnet)');
     console.log('   • Optimism (testnet)');
     console.log('   • Arbitrum (testnet)');
