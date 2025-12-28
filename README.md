@@ -40,6 +40,10 @@ examples/
 │   ├── 02-execute-batch.ts    # Batch transactions with session
 │   └── 03-revoke-session.ts   # Revoke session key
 │
+├── advanced/               # Security-first verification examples
+│   ├── 01-vaa-verify.ts        # Defensive VAA validation + optional emitter enforcement
+│   └── 02-vaa-fetch-and-verify.ts # Fetch VAA then validate (sequence or tx hash)
+│
 ├── integrations/           # Real-world integration patterns
 │   ├── payment-gateway/       # Accept crypto payments
 │   ├── nft-marketplace/       # NFT trading with passkeys
