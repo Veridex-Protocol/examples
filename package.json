@@ -18,7 +18,7 @@
     "contracts:deploy": "cd contracts && npx hardhat run scripts/deploy-all.ts --network baseSepolia"
   },
   "dependencies": {
-    "@veridex/sdk": "workspace:*",
+    "@veridex/sdk": "^1.0.0-beta.1",
     "ethers": "^6.13.0",
     "dotenv": "^16.4.5"
   },
