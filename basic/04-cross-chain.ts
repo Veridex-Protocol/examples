@@ -7,8 +7,8 @@
  * Run: npx ts-node basic/04-cross-chain.ts
  */
 
-import { createSDK, CHAIN_PRESETS } from 'veridex-sdk';
-import { parseEther, parseUnits, formatEther, formatUnits } from 'ethers';
+import { createSDK, CHAIN_PRESETS } from '@veridex/sdk';
+import { parseEther, parseUnits, formatEther, formatUnits, Wallet, JsonRpcProvider } from 'ethers';
 
 // Wormhole Chain IDs
 const CHAIN_IDS = {
@@ -17,6 +17,9 @@ const CHAIN_IDS = {
     ARBITRUM_SEPOLIA: 10003,
     SOLANA_DEVNET: 1,
 };
+
+// For this example to work in Node.js, we need an EOA to pay for gas
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 async function main() {
     console.log('BRIDGE Veridex Cross-Chain Transfer Example\n');
@@ -27,6 +30,8 @@ async function main() {
     // =========================================================================
     
     const sdk = createSDK('base');
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
     
     console.log('\nRPC SDK initialized for Base testnet (Hub chain)');
     
@@ -40,8 +45,9 @@ async function main() {
     console.log('\nBALANCE Checking Base balance...');
     
     try {
-        const balance = await sdk.getBalance('native');
-        console.log(`   Balance: ${formatEther(balance)} ETH`);
+        const balanceResult = await sdk.getVaultNativeBalance();
+        const balance = balanceResult.balance;
+        console.log(`   Balance: ${balanceResult.formatted} ETH`);
 
         if (balance < parseEther('0.01')) {
             console.log('\nWARN  Minimum 0.01 ETH needed for cross-chain transfer.');
@@ -50,27 +56,28 @@ async function main() {
         }
 
         // =====================================================================
-        // Step 3: Get Bridge Quote
+        // Step 3: Get Bridge Fees
         // =====================================================================
         
-        console.log('\n Getting bridge quote...');
+        console.log('\n Getting bridge fees...');
         
         const bridgeAmount = parseEther('0.005');
         
-        const quote = await sdk.quoteBridge({
-            targetChain: CHAIN_IDS.OPTIMISM_SEPOLIA,
+        const fees = await sdk.getBridgeFees({
+            sourceChain: CHAIN_IDS.BASE_SEPOLIA,
+            destinationChain: CHAIN_IDS.OPTIMISM_SEPOLIA,
             token: 'native',
             amount: bridgeAmount,
+            recipient: vaultAddress,
         });
 
-        console.log(`\nNOTE Bridge Quote:`);
+        console.log(`\nNOTE Bridge Fees:`);
         console.log(`   Source: Base Sepolia`);
         console.log(`   Target: Optimism Sepolia`);
         console.log(`   Amount: ${formatEther(bridgeAmount)} ETH`);
-        console.log(`   Bridge Fee: ${formatEther(quote.bridgeFee)} ETH`);
-        console.log(`   Relayer Fee: ${formatEther(quote.relayerFee)} ETH`);
-        console.log(`   Total Cost: ${formatEther(quote.totalCost)} ETH`);
-        console.log(`   Estimated Time: ${quote.estimatedTime} seconds`);
+        console.log(`   Message Fee: ${formatEther(fees.messageFee)} ETH`);
+        console.log(`   Relayer Fee: ${formatEther(fees.relayerFee)} ETH`);
+        console.log(`   Total Cost: ${fees.formattedTotal}`);
 
         // =====================================================================
         // Step 4: Execute Bridge Transfer
@@ -79,46 +86,21 @@ async function main() {
         console.log('\nSECURITY Initiating cross-chain transfer...');
         console.log('   (This triggers passkey signature)\n');
 
-        const result = await sdk.bridge({
-            targetChain: CHAIN_IDS.OPTIMISM_SEPOLIA,
+        const result = await sdk.bridgeWithTracking({
+            sourceChain: CHAIN_IDS.BASE_SEPOLIA,
+            destinationChain: CHAIN_IDS.OPTIMISM_SEPOLIA,
             token: 'native',
             amount: bridgeAmount,
-            // Optional: specify recipient (defaults to same vault address)
-            // recipient: '0x...',
-        }, {
-            onProgress: (progress) => {
-                switch (progress.stage) {
-                    case 'signing':
-                        console.log('   SECURITY Signing with passkey...');
-                        break;
-                    case 'dispatching':
-                        console.log('   RPC Dispatching to Hub...');
-                        break;
-                    case 'wormhole':
-                        console.log('   NETWORK Waiting for Wormhole attestation...');
-                        break;
-                    case 'guardians':
-                        console.log(`    Guardian signatures: ${progress.signatures}/13`);
-                        break;
-                    case 'relaying':
-                        console.log('    Relaying to target chain...');
-                        break;
-                    case 'confirming':
-                        console.log('   WAIT Confirming on target chain...');
-                        break;
-                    case 'complete':
-                        console.log('   OK Bridge complete!');
-                        break;
-                }
-            },
+            recipient: vaultAddress,
+        }, signer, (progress) => {
+            console.log(`   [${progress.step}/${progress.totalSteps}] ${progress.status}: ${progress.message}`);
         });
 
         console.log('\nDONE Cross-chain transfer successful!');
         console.log(`\nNOTE Transaction Details:`);
-        console.log(`   Source TX: ${result.sourceTxHash}`);
-        console.log(`   Target TX: ${result.targetTxHash}`);
-        console.log(`   VAA Sequence: ${result.vaaSequence}`);
-        console.log(`   Amount Received: ${formatEther(result.amountReceived)} ETH`);
+        console.log(`   Source TX: ${result.transactionHash}`);
+        console.log(`   Sequence: ${result.sequence}`);
+        console.log(`   VAA Ready: ${!!result.vaa}`);
 
         // =====================================================================
         // Step 5: Verify on Target Chain
@@ -127,8 +109,8 @@ async function main() {
         console.log('\nVERIFY Verifying on Optimism...');
         
         const optimismSdk = createSDK('optimism');
-        const newBalance = await optimismSdk.getBalance('native');
-        console.log(`   Optimism Balance: ${formatEther(newBalance)} ETH`);
+        const newBalance = await optimismSdk.getVaultNativeBalance();
+        console.log(`   Optimism Balance: ${newBalance.formatted} ETH`);
 
     } catch (error) {
         if (error instanceof Error) {
@@ -185,26 +167,25 @@ async function bridgeToSolana() {
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
 
     console.log('\nNOTE Bridging 0.001 ETH from Base to Solana...');
     console.log('   (ETH becomes wETH on Solana)\n');
 
     try {
-        const result = await sdk.bridge({
-            targetChain: CHAIN_IDS.SOLANA_DEVNET,
+        const result = await sdk.bridgeWithTracking({
+            sourceChain: CHAIN_IDS.BASE_SEPOLIA,
+            destinationChain: CHAIN_IDS.SOLANA_DEVNET,
             token: 'native',
             amount: parseEther('0.001'),
-            // Solana uses base58 addresses
-            // Defaults to your derived Solana address
-        }, {
-            onProgress: (progress) => {
-                console.log(`   ${progress.stage}: ${progress.message || ''}`);
-            },
+            recipient: sdk.getVaultAddress(), // In reality would be a Solana address
+        }, signer, (progress) => {
+            console.log(`   ${progress.status}: ${progress.message}`);
         });
 
         console.log('\nOK Solana bridge complete!');
-        console.log(`   Source TX (EVM): ${result.sourceTxHash}`);
-        console.log(`   Target TX (Solana): ${result.targetTxHash}`);
+        console.log(`   Source TX: ${result.transactionHash}`);
     } catch (error) {
         if (error instanceof Error) {
             console.log(`ERROR Error: ${error.message}`);
@@ -213,39 +194,24 @@ async function bridgeToSolana() {
 }
 
 // ============================================================================
-// Check VAA Status
+// Fetch VAA
 // ============================================================================
 
-async function checkVAAStatus() {
+async function fetchVAA() {
     console.log('\n' + '='.repeat(50));
-    console.log(' Check VAA Status');
+    console.log(' Fetch VAA');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
 
-    // Example: Check status of a previous bridge
-    const vaaSequence = 12345n; // Replace with actual sequence
-    const emitterChain = CHAIN_IDS.BASE_SEPOLIA;
+    // Example: Fetch VAA for a previous bridge
+    const txHash = '0x...'; // Replace with actual tx hash
 
-    console.log(`\nNOTE Checking VAA status for sequence ${vaaSequence}...`);
+    console.log(`\nNOTE Fetching VAA for transaction ${txHash}...`);
 
     try {
-        const status = await sdk.getVAAStatus({
-            sequence: vaaSequence,
-            emitterChain: emitterChain,
-        });
-
-        console.log(`\n VAA Status:`);
-        console.log(`   Sequence: ${status.sequence}`);
-        console.log(`   Status: ${status.status}`);
-        console.log(`   Signatures: ${status.signatures}/${status.requiredSignatures}`);
-        console.log(`   Timestamp: ${new Date(status.timestamp * 1000).toISOString()}`);
-        
-        if (status.status === 'completed') {
-            console.log(`   Target TX: ${status.targetTxHash}`);
-        } else if (status.status === 'pending') {
-            console.log(`   ETA: ~${status.estimatedTime} seconds`);
-        }
+        const vaa = await sdk.fetchVAAForTransaction(txHash);
+        console.log(`   VAA (base64): ${vaa.slice(0, 50)}...`);
     } catch (error) {
         if (error instanceof Error) {
             console.log(`ERROR Error: ${error.message}`);
@@ -266,42 +232,20 @@ async function viewCrossChainPortfolio() {
 
     console.log('\n Fetching balances across all chains...\n');
 
-    const chains = ['base', 'optimism', 'arbitrum'] as const;
-
-    console.log('Chain          | ETH            | USDC           ');
-    console.log('-'.repeat(50));
-
-    for (const chain of chains) {
-        try {
-            const chainSdk = createSDK(chain);
-            const ethBalance = await chainSdk.getBalance('native');
-            
-            // Get USDC (address varies by chain)
-            const usdcAddresses: Record<string, string> = {
-                base: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-                optimism: '0x5fd84259d66Cd46123540766Be93DFE6D43130D7',
-                arbitrum: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d',
-            };
-            
-            let usdcBalance = 0n;
-            try {
-                usdcBalance = await chainSdk.getBalance(usdcAddresses[chain]);
-            } catch {
-                // Token might not exist on this chain
-            }
-
-            const ethStr = formatEther(ethBalance).slice(0, 12).padEnd(14);
-            const usdcStr = formatUnits(usdcBalance, 6).slice(0, 12).padEnd(14);
-            console.log(`${chain.padEnd(14)} | ${ethStr} | ${usdcStr}`);
-        } catch (error) {
-            console.log(`${chain.padEnd(14)} | Error          | Error          `);
+    try {
+        const portfolio = await sdk.getMultiChainBalances([10004, 10005, 10003]);
+        for (const chain of portfolio) {
+            console.log(`   ${chain.chainName}: ${chain.tokens[0]?.formatted || '0'} ETH`);
+        }
+    } catch (error) {
+        if (error instanceof Error) {
+            console.log(`ERROR Error: ${error.message}`);
         }
     }
 }
 
-// Run examples
+// Run all
 main()
-    .then(() => bridgeUSDC())
     .then(() => bridgeToSolana())
     .then(() => viewCrossChainPortfolio())
     .catch(console.error);

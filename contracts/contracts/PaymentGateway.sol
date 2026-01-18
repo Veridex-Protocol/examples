@@ -14,7 +14,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
  * 
  * Example usage:
  * ```typescript
- * import { createSDK } from 'veridex-sdk';
+ * import { createSDK } from '@veridex/sdk';
  * 
  * const sdk = createSDK('base');
  * await sdk.passkey.register('merchant (at) shop.com', 'My Shop');

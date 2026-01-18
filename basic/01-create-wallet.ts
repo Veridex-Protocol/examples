@@ -8,7 +8,29 @@
  * Run: npx ts-node basic/01-create-wallet.ts
  */
 
-import { createSDK, getSupportedChains, getHubChains } from 'veridex-sdk';
+import { createSDK, getSupportedChains, getHubChains } from '@veridex/sdk';
+
+// Polyfill window for Node.js environment to prevent crashes checks
+if (typeof window === 'undefined') {
+    (global as any).window = {
+        location: {
+            hostname: 'localhost'
+        },
+        navigator: {
+            credentials: {
+                create: async () => {
+                    throw new Error('WebAuthn is not supported in this environment');
+                }
+            }
+        }
+    };
+    (global as any).localStorage = {
+        getItem: () => null,
+        setItem: () => { },
+        removeItem: () => { },
+        clear: () => { }
+    };
+}
 
 async function main() {
     console.log('SECURITY Veridex Wallet Creation Example\n');
@@ -17,15 +39,15 @@ async function main() {
     // =========================================================================
     // Step 1: Initialize SDK (just specify chain name!)
     // =========================================================================
-    
+
     console.log('\nRPC Initializing SDK for Base testnet...');
-    
+
     // The simplest way to create an SDK instance
     // Default network is 'testnet'
     const sdk = createSDK('base');
-    
+
     console.log('OK SDK initialized successfully');
-    
+
     // Show supported chains
     console.log('\nNOTE Supported chains:');
     const chains = getSupportedChains();
@@ -35,7 +57,7 @@ async function main() {
     // =========================================================================
     // Step 2: Register a Passkey
     // =========================================================================
-    
+
     console.log('\n Registering passkey...');
     console.log('   (In a browser, this would trigger biometric prompt)\n');
 
@@ -50,19 +72,19 @@ async function main() {
         console.log('OK Passkey registered successfully!');
         console.log(`   Credential ID: ${credential.credentialId.slice(0, 20)}...`);
         console.log(`   Key Hash: ${credential.keyHash}`);
-        console.log(`   Public Key X: ${credential.publicKey.x.slice(0, 20)}...`);
-        console.log(`   Public Key Y: ${credential.publicKey.y.slice(0, 20)}...`);
+        console.log(`   Public Key X: ${credential.publicKeyX.toString().slice(0, 20)}...`);
+        console.log(`   Public Key Y: ${credential.publicKeyY.toString().slice(0, 20)}...`);
 
         // =====================================================================
         // Step 3: Get Your Vault Address
         // =====================================================================
-        
+
         console.log('\nLOCATION Computing vault address...');
-        
+
         // The vault address is deterministic - derived from your passkey
         // It's the SAME on all EVM chains!
         const vaultAddress = sdk.getVaultAddress();
-        
+
         console.log(`\nDONE Your vault address: ${vaultAddress}`);
         console.log('\n   This address is the same on:');
         console.log('   • Base');
@@ -74,24 +96,23 @@ async function main() {
         // =====================================================================
         // Step 4: Get Unified Identity
         // =====================================================================
-        
+
         console.log('\nNETWORK Getting unified cross-chain identity...');
-        
+
         const identity = await sdk.getUnifiedIdentity();
-        
+
         console.log('\nNOTE Unified Identity:');
         console.log(`   Key Hash: ${identity.keyHash}`);
-        console.log(`   Primary Address: ${identity.primaryAddress}`);
-        console.log(`   Chain Addresses:`);
-        
-        for (const chainAddr of identity.chainAddresses) {
-            console.log(`   • ${chainAddr.chainName}: ${chainAddr.address}`);
+        console.log(`   Addresses:`);
+
+        for (const chainAddr of identity.addresses) {
+            console.log(`   • ${chainAddr.chainName}: ${chainAddr.address} (${chainAddr.deployed ? 'Deployed' : 'Not Deployed'})`);
         }
 
         // =====================================================================
         // Step 5: Display Usage Instructions
         // =====================================================================
-        
+
         console.log('\n' + '='.repeat(50));
         console.log('START Next Steps:');
         console.log('='.repeat(50));
@@ -133,33 +154,64 @@ async function showMultiChainExample() {
     console.log('='.repeat(50));
 
     // Create SDKs for different chains
-    const baseSdk = createSDK('base');
-    const optimismSdk = createSDK('optimism');
-    const arbitrumSdk = createSDK('arbitrum');
-    const solanaSdk = createSDK('solana');
-
     console.log('\nOK Created SDKs for:');
-    console.log('   • Base (testnet)');
-    console.log('   • Optimism (testnet)');
-    console.log('   • Arbitrum (testnet)');
-    console.log('   • Solana (devnet)');
+
+    try {
+        createSDK('base');
+        console.log('   • Base (testnet)');
+    } catch (e: any) {
+        console.log(`   • Base (testnet) [FAILED: ${e.message}]`);
+    }
+
+    try {
+        createSDK('optimism');
+        console.log('   • Optimism (testnet)');
+    } catch (e: any) {
+        console.log(`   • Optimism (testnet) [SKIPPED: ${e.message}]`);
+    }
+
+    try {
+        createSDK('arbitrum');
+        console.log('   • Arbitrum (testnet)');
+    } catch (e: any) {
+        console.log(`   • Arbitrum (testnet) [SKIPPED: ${e.message}]`);
+    }
+
+    try {
+        createSDK('solana');
+        console.log('   • Solana (devnet)');
+    } catch (e: any) {
+        console.log(`   • Solana (devnet) [SKIPPED: ${e.message}]`);
+    }
 
     // For mainnet, specify the network
-    const mainnetSdk = createSDK('base', { network: 'mainnet' });
-    console.log('   • Base (mainnet)');
+    try {
+        createSDK('base', { network: 'mainnet' });
+        console.log('   • Base (mainnet)');
+    } catch (e: any) {
+        console.log(`   • Base (mainnet) [SKIPPED: ${e.message}]`);
+    }
 
     // With custom RPC
-    const customSdk = createSDK('base', {
-        rpcUrl: 'https://my-custom-rpc.example.com',
-    });
-    console.log('   • Base with custom RPC');
+    try {
+        createSDK('base', {
+            rpcUrl: 'https://my-custom-rpc.example.com',
+        });
+        console.log('   • Base with custom RPC');
+    } catch (e: any) {
+        console.log(`   • Base with custom RPC [SKIPPED: ${e.message}]`);
+    }
 
     // With relayer for gasless transactions
-    const gaslessSdk = createSDK('base', {
-        relayerUrl: 'https://relayer.veridex.io',
-        relayerApiKey: 'your-api-key',
-    });
-    console.log('   • Base with gasless relayer');
+    try {
+        createSDK('base', {
+            relayerUrl: 'https://amused-kameko-veridex-demo-37453117.koyeb.app',
+            // relayerApiKey: 'your-api-key',
+        });
+        console.log('   • Base with gasless relayer');
+    } catch (e: any) {
+        console.log(`   • Base with gasless relayer [SKIPPED: ${e.message}]`);
+    }
 }
 
 // Run the example

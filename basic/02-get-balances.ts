@@ -7,7 +7,7 @@
  * Run: npx ts-node basic/02-get-balances.ts
  */
 
-import { createSDK } from 'veridex-sdk';
+import { createSDK } from '@veridex/sdk';
 import { formatEther, formatUnits } from 'ethers';
 
 // Token addresses for reference
@@ -48,17 +48,17 @@ async function main() {
 
     try {
         // Get native ETH balance on Base
-        const nativeBalance = await sdk.getBalance('native');
+        const nativeBalance = await sdk.getVaultNativeBalance();
         
         console.log(' Native Token Balances:');
-        console.log(`   Base ETH: ${formatEther(nativeBalance)} ETH`);
+        console.log(`   Base ETH: ${nativeBalance.formatted} ETH`);
 
         // =====================================================================
         // Step 3: Get ERC20 Token Balances
         // =====================================================================
         
-        const usdcBalance = await sdk.getBalance(TOKENS.baseSepolia.USDC);
-        console.log(`   Base USDC: ${formatUnits(usdcBalance, 6)} USDC`);
+        const usdcBalance = await sdk.getVaultTokenBalance(TOKENS.baseSepolia.USDC);
+        console.log(`   Base USDC: ${usdcBalance.formatted} USDC`);
 
         // =====================================================================
         // Step 4: Get Multi-Chain Portfolio
@@ -67,16 +67,16 @@ async function main() {
         console.log('\nNETWORK Multi-Chain Portfolio:');
         console.log('-'.repeat(50));
 
-        // Get balances across all configured chains
-        const portfolio = await sdk.getVaultBalances();
+        // Get balances across common testnet chains
+        const portfolio = await sdk.getMultiChainBalances([10004, 10005, 10003]);
         
         for (const chainBalance of portfolio) {
             console.log(`\n   ${chainBalance.chainName}:`);
-            console.log(`   └─ Native: ${formatEther(chainBalance.nativeBalance)} ETH`);
+            const native = chainBalance.tokens.find(t => t.token.isNative);
+            console.log(`   └─ Native: ${native?.formatted || '0'} ${native?.token.symbol || 'ETH'}`);
             
-            for (const token of chainBalance.tokens) {
-                const formatted = formatUnits(token.balance, token.decimals);
-                console.log(`   └─ ${token.symbol}: ${formatted}`);
+            for (const token of chainBalance.tokens.filter(t => !t.token.isNative)) {
+                console.log(`   └─ ${token.token.symbol}: ${token.formatted}`);
             }
         }
 
@@ -87,18 +87,16 @@ async function main() {
         console.log('\nQUERIES Guardian-Attested Balance Query:');
         console.log('-'.repeat(50));
 
-        // This uses Wormhole Queries for cryptographic proof of balance
-        // Useful for cross-chain verification
-        const attestedPortfolio = await sdk.queryPortfolio([
-            { chainId: 10004, tokens: ['native', TOKENS.baseSepolia.USDC] },
-            { chainId: 10005, tokens: ['native'] },
-        ]);
+        // In the current SDK, multi-chain balances automatically use Queries if a queryApiKey is provided
+        // This provides cryptographic proof of balance useful for cross-chain verification
+        const multiChainResults = await sdk.getMultiChainBalances([10004, 10005]);
 
-        console.log('\n   Attested balances (with Guardian signatures):');
-        for (const entry of attestedPortfolio.balances) {
-            console.log(`   Chain ${entry.chainId}: ${entry.balance}`);
+        console.log('\n   Attested balances (via Wormhole Queries):');
+        for (const entry of multiChainResults) {
+            const eth = entry.tokens.find(t => t.token.symbol === 'ETH');
+            console.log(`   Chain ${entry.wormholeChainId} (${entry.chainName}): ${eth?.formatted || '0'} ETH`);
         }
-        console.log(`   Proof timestamp: ${new Date(attestedPortfolio.timestamp * 1000).toISOString()}`);
+        console.log(`   Query time: ${new Date().toISOString()}`);
 
     } catch (error) {
         if (error instanceof Error) {
@@ -127,22 +125,24 @@ async function showBalanceManagerExample() {
 
     console.log('\nIN PROGRESS First fetch (from RPC):');
     const start1 = Date.now();
-    const balance1 = await sdk.getBalance('native');
+    const balance1 = await sdk.getVaultNativeBalance();
     console.log(`   Time: ${Date.now() - start1}ms`);
-    console.log(`   Balance: ${formatEther(balance1)} ETH`);
+    console.log(`   Balance: ${balance1.formatted} ETH`);
 
     console.log('\nFAST Second fetch (from cache):');
     const start2 = Date.now();
-    const balance2 = await sdk.getBalance('native');
+    const balance2 = await sdk.getVaultNativeBalance();
     console.log(`   Time: ${Date.now() - start2}ms`);
-    console.log(`   Balance: ${formatEther(balance2)} ETH`);
+    console.log(`   Balance: ${balance2.formatted} ETH`);
 
-    // Force refresh if needed
-    console.log('\nIN PROGRESS Force refresh:');
+    // Invalidate cache if needed
+    console.log('\nIN PROGRESS Invalidate cache:');
     const start3 = Date.now();
-    const balance3 = await sdk.getBalance('native', { forceRefresh: true });
+    const vaultAddress = sdk.getVaultAddress();
+    sdk.balance.invalidateCache(10004, vaultAddress); // Base Sepolia
+    const balance3 = await sdk.getVaultNativeBalance();
     console.log(`   Time: ${Date.now() - start3}ms`);
-    console.log(`   Balance: ${formatEther(balance3)} ETH`);
+    console.log(`   Balance: ${balance3.formatted} ETH`);
 }
 
 // ============================================================================
@@ -164,11 +164,11 @@ async function showCrossChainBalances() {
     for (const chain of chains) {
         try {
             const sdk = createSDK(chain);
-            const balance = await sdk.getBalance('native');
-            const formatted = formatEther(balance).padEnd(16);
+            const balance = await sdk.getVaultNativeBalance();
+            const formatted = balance.formatted.padEnd(16);
             console.log(`${chain.padEnd(14)} | ${formatted} | OK`);
         } catch (error) {
-            console.log(`${chain.padEnd(14)} | N/A              | ERROR Error`);
+            console.log(`${chain.padEnd(14)} | N/A              | ERROR`);
         }
     }
 }

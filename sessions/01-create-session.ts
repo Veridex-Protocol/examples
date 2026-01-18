@@ -12,7 +12,7 @@
  * Run: npx ts-node sessions/01-create-session.ts
  */
 
-import { createSDK, SessionManager } from 'veridex-sdk';
+import { createSDK, SessionManager } from '@veridex/sdk';
 import { parseEther } from 'ethers';
 
 async function main() {

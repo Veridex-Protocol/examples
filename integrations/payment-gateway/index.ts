@@ -7,7 +7,7 @@
  * Run: npx ts-node integrations/payment-gateway/index.ts
  */
 
-import { createSDK } from 'veridex-sdk';
+import { createSDK } from '@veridex/sdk';
 import { parseEther, parseUnits, formatEther, ethers } from 'ethers';
 
 // Payment Gateway contract ABI (simplified)

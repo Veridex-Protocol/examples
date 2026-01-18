@@ -7,7 +7,7 @@
  * Run: npx ts-node sessions/02-execute-batch.ts
  */
 
-import { createSDK, SessionManager } from 'veridex-sdk';
+import { createSDK, SessionManager } from '@veridex/sdk';
 import { parseEther, parseUnits, formatEther } from 'ethers';
 
 // Example contract addresses

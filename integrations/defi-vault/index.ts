@@ -10,7 +10,7 @@
  * - Gasless DeFi operations via session keys
  */
 
-import { createSDK, createSessionSDK } from 'veridex-sdk';
+import { createSDK, createSessionSDK } from '@veridex/sdk';
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 

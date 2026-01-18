@@ -7,7 +7,7 @@
  * Run: npx ts-node basic/05-gasless.ts
  */
 
-import { createSDK } from 'veridex-sdk';
+import { createSDK } from '@veridex/sdk';
 import { parseEther, parseUnits, formatEther, formatUnits } from 'ethers';
 
 // Relayer configuration
@@ -57,18 +57,14 @@ async function main() {
         
         console.log('\n Getting fee quote...');
         
-        const feeQuote = await sdk.relayer.quoteFee({
-            action: 'transfer',
-            token: 'native',
-            amount: parseEther('0.01'),
-            targetChain: 10004, // Base
-        });
+        const feeQuote = await sdk.relayer!.getFeeQuote(
+            10004, // Source: Base
+            10005, // Destination: Optimism
+        );
 
         console.log(`\nNOTE Fee Quote:`);
-        console.log(`   Relayer Fee: ${formatEther(feeQuote.relayerFee)} ETH`);
-        console.log(`   Gas Estimate: ${feeQuote.gasEstimate}`);
-        console.log(`   Total: ${formatEther(feeQuote.total)} ETH`);
-        console.log(`   Fee paid from: ${feeQuote.feeDeductedFrom}`);
+        console.log(`   Relayer Fee: ${formatEther(feeQuote.feeInDestinationToken)}`);
+        console.log(`   Total in Source: ${formatEther(feeQuote.feeInSourceToken)}`);
 
         // =====================================================================
         // Step 4: Execute Gasless Transfer
@@ -78,40 +74,18 @@ async function main() {
         console.log('   (You sign with passkey, relayer pays gas)\n');
 
         const result = await sdk.transferViaRelayer({
+            targetChain: 10004,
             token: 'native',
             recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
             amount: parseEther('0.001'),
-        }, {
-            onProgress: (status) => {
-                switch (status.stage) {
-                    case 'preparing':
-                        console.log('   NOTE Preparing transaction...');
-                        break;
-                    case 'signing':
-                        console.log('   SECURITY Signing with passkey...');
-                        break;
-                    case 'submitting':
-                        console.log('   SEND Submitting to relayer...');
-                        break;
-                    case 'relaying':
-                        console.log('    Relayer broadcasting...');
-                        break;
-                    case 'confirming':
-                        console.log('   WAIT Waiting for confirmation...');
-                        break;
-                    case 'complete':
-                        console.log('   OK Transaction confirmed!');
-                        break;
-                }
-            },
+        }, (status) => {
+            console.log(`   [${status.step || '?'}] ${status.status}: ${status.message}`);
         });
 
         console.log('\nDONE Gasless transfer successful!');
         console.log(`\nNOTE Transaction Details:`);
         console.log(`   TX Hash: ${result.transactionHash}`);
-        console.log(`   Block: ${result.blockNumber}`);
-        console.log(`   Fee Paid: ${formatEther(result.feePaid)} ETH`);
-        console.log(`   Fee Paid By: Relayer REWARD`);
+        console.log(`   Sequence: ${result.sequence}`);
 
     } catch (error) {
         if (error instanceof Error) {
@@ -142,18 +116,18 @@ async function gaslessBridge() {
 
     try {
         const result = await sdk.bridgeViaRelayer({
-            targetChain: 10005, // Optimism Sepolia
+            sourceChain: 10004, // Base Sepolia
+            destinationChain: 10005, // Optimism Sepolia
             token: 'native',
             amount: parseEther('0.005'),
-        }, {
-            onProgress: (status) => {
-                console.log(`   ${status.stage}: ${status.message || '...'}`);
-            },
+            recipient: sdk.getVaultAddress(),
+        }, (status) => {
+            console.log(`   [${status.step}/${status.totalSteps}] ${status.status}: ${status.message}`);
         });
 
-        console.log('\nOK Gasless bridge complete!');
-        console.log(`   Source TX: ${result.sourceTxHash}`);
-        console.log(`   Target TX: ${result.targetTxHash}`);
+        console.log('\nOK Gasless bridge submitted!');
+        console.log(`   Hub TX: ${result.transactionHash}`);
+        console.log(`   Sequence: ${result.sequence}`);
     } catch (error) {
         if (error instanceof Error) {
             console.log(`ERROR Error: ${error.message}`);

@@ -5,7 +5,7 @@
  * are no longer needed or may be compromised.
  */
 
-import { createSDK } from 'veridex-sdk';
+import { createSDK } from '@veridex/sdk';
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 

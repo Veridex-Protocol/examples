@@ -7,7 +7,7 @@
  * Run: npx ts-node integrations/nft-marketplace/index.ts
  */
 
-import { createSDK, SessionManager } from 'veridex-sdk';
+import { createSDK, SessionManager } from '@veridex/sdk';
 import { parseEther, formatEther, ethers } from 'ethers';
 
 // NFT Marketplace contract ABI (simplified)
