@@ -4,27 +4,25 @@
   "description": "Example implementations using Veridex Protocol SDK",
   "type": "module",
   "scripts": {
-    "basic:wallet": "bun run basic/01-create-wallet.ts",
-    "basic:balances": "bun run basic/02-get-balances.ts",
-    "basic:send": "bun run basic/03-send-tokens.ts",
-    "basic:crosschain": "bun run basic/04-cross-chain.ts",
-    "basic:gasless": "bun run basic/05-gasless.ts",
-    "advanced:vaa:verify": "bun run advanced/01-vaa-verify.ts",
-    "advanced:vaa:fetch": "bun run advanced/02-vaa-fetch-and-verify.ts",
-    "advanced:session": "bun run advanced/03-session-lifecycle.ts",
-    "session:create": "bun run sessions/01-create-session.ts",
-    "session:batch": "bun run sessions/02-execute-batch.ts",
-    "contracts:compile": "cd contracts && npx hardhat compile",
-    "contracts:deploy": "cd contracts && npx hardhat run scripts/deploy-all.ts --network baseSepolia"
+    "basic:wallet": "tsx basic/01-create-wallet.ts",
+    "basic:balances": "tsx basic/02-get-balances.ts",
+    "basic:send": "tsx basic/03-send-tokens.ts",
+    "basic:crosschain": "tsx basic/04-cross-chain.ts",
+    "basic:gasless": "tsx basic/05-gasless.ts",
+    "advanced:vaa": "tsx advanced/01-vaa-verify.ts",
+    "advanced:session": "tsx advanced/02-session-lifecycle.ts",
+    "session:create": "tsx sessions/01-create-session.ts",
+    "session:execute": "tsx sessions/02-execute-batch.ts",
+    "session:revoke": "tsx sessions/03-revoke-session.ts"
   },
   "dependencies": {
-    "@veridex/sdk": "^1.0.0-beta.16",
+    "@veridex/sdk": "workspace:*",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
 }

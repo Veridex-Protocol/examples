@@ -1,261 +1,319 @@
 /**
- * Example: Batch Operations with Session Keys
+ * Session Example 02: Execute Batch Transactions
  * 
- * Execute multiple operations in a single transaction using session keys.
- * Perfect for complex workflows that would otherwise require many signatures.
+ * This example demonstrates how to execute multiple transactions
+ * using a session key without repeated passkey prompts.
  * 
- * Run: npx ts-node sessions/02-execute-batch.ts
+ * Run: npm run session:execute
  */
 
-import { createSDK, SessionManager } from '@veridex/sdk';
-import { parseEther, parseUnits, formatEther } from 'ethers';
+import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
+import { parseEther, formatEther, Wallet, JsonRpcProvider } from 'ethers';
 
-// Example contract addresses
-const CONTRACTS = {
-    USDC: '0x036CbD53842c5426634e7929541eC2318f3dCF7e',
-    DEX: '0x1234567890123456789012345678901234567890', // Example DEX
-    STAKING: '0x0987654321098765432109876543210987654321', // Example Staking
-};
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+const RECIPIENTS = [
+    '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
+    '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199',
+    '0xdD2FD4581271e230360230F9337D5c0430Bf44C0',
+];
 
 async function main() {
-    console.log('PACKAGE Veridex Batch Operations Example\n');
+    console.log('📦 Execute Batch Transactions with Session\n');
+    console.log('='.repeat(50));
+
+    // =========================================================================
+    // Step 1: Initialize SDK and Session Manager
+    // =========================================================================
+    
+    const sdk = createSDK('base');
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
+    
+    console.log('\n📡 SDK initialized for Base testnet');
+    console.log(`💳 Signer address: ${signer.address}`);
+    
+    try {
+        const vaultAddress = sdk.getVaultAddress();
+        console.log(`📍 Vault address: ${vaultAddress}`);
+
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
+        const sessionManager = new SessionManager({
+            hubClient,
+            passkeyManager: sdk.passkey,
+        });
+
+        // =====================================================================
+        // Step 2: Create or Retrieve Session
+        // =====================================================================
+        
+        console.log('\n🔑 Setting up session...');
+        
+        // Check for existing sessions
+        let session;
+        const existingSessions = await sessionManager.getSessions();
+        
+        if (existingSessions.length > 0) {
+            session = existingSessions[0];
+            console.log('✅ Using existing session');
+            console.log(`   Expires: ${new Date(session.expiry * 1000).toISOString()}`);
+        } else {
+            console.log('   Creating new session...');
+            session = await sessionManager.createSession({
+                duration: 3600, // 1 hour
+                maxValue: parseEther('0.1'),
+                requireUV: true,
+            });
+            console.log('✅ New session created');
+        }
+
+        // =====================================================================
+        // Step 3: Check Balance
+        // =====================================================================
+        
+        console.log('\n💰 Checking balance...');
+        
+        const balance = await sdk.getVaultNativeBalance();
+        console.log(`   Balance: ${balance.formatted} ETH`);
+
+        const totalNeeded = parseEther('0.0003'); // 0.0001 ETH × 3 recipients
+        if (balance.balance < totalNeeded) {
+            console.log('\n⚠️  Insufficient balance for batch transactions.');
+            console.log(`   Need: ${formatEther(totalNeeded)} ETH`);
+            console.log(`   Have: ${balance.formatted} ETH`);
+            return;
+        }
+
+        // =====================================================================
+        // Step 4: Execute Batch Transactions
+        // =====================================================================
+        
+        console.log('\n📦 Executing batch transactions...');
+        console.log('   (No passkey prompts needed!)\n');
+
+        const chainConfig = sdk.getChainConfig();
+        const results = [];
+
+        for (let i = 0; i < RECIPIENTS.length; i++) {
+            const recipient = RECIPIENTS[i];
+            const amount = parseEther('0.0001');
+
+            console.log(`   Transaction ${i + 1}/${RECIPIENTS.length}:`);
+            console.log(`   → To: ${recipient}`);
+            console.log(`   → Amount: ${formatEther(amount)} ETH`);
+
+            try {
+                const result = await sessionManager.executeWithSession(
+                    {
+                        targetChain: chainConfig.wormholeChainId,
+                        token: 'native',
+                        recipient,
+                        amount,
+                    },
+                    session,
+                    signer
+                );
+
+                console.log(`   ✅ Success: ${result.transactionHash.slice(0, 20)}...`);
+                results.push({ success: true, hash: result.transactionHash });
+            } catch (error: any) {
+                console.log(`   ❌ Failed: ${error.message}`);
+                results.push({ success: false, error: error.message });
+            }
+
+            // Small delay between transactions
+            if (i < RECIPIENTS.length - 1) {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+            }
+        }
+
+        // =====================================================================
+        // Step 5: Summary
+        // =====================================================================
+        
+        console.log('\n' + '='.repeat(50));
+        console.log('📊 Batch Execution Summary');
+        console.log('='.repeat(50));
+
+        const successful = results.filter(r => r.success).length;
+        const failed = results.filter(r => !r.success).length;
+
+        console.log(`\n   Total Transactions: ${results.length}`);
+        console.log(`   Successful: ${successful} ✅`);
+        console.log(`   Failed: ${failed} ❌`);
+        console.log(`   Total Sent: ${formatEther(parseEther('0.0001') * BigInt(successful))} ETH`);
+
+        // =====================================================================
+        // Step 6: Check Updated Balance
+        // =====================================================================
+        
+        console.log('\n💰 Updated balance:');
+        
+        // Invalidate cache
+        sdk.balance.invalidateCache(chainConfig.wormholeChainId, vaultAddress);
+        
+        const newBalance = await sdk.getVaultNativeBalance();
+        console.log(`   New balance: ${newBalance.formatted} ETH`);
+        console.log(`   Difference: ${formatEther(balance.balance - newBalance.balance)} ETH`);
+
+    } catch (error) {
+        if (error instanceof Error) {
+            console.error('\n❌ Error:', error.message);
+            
+            if (error.message.includes('No credential')) {
+                console.log('\n💡 Run basic/01-create-wallet.ts first to register a passkey.');
+            } else if (error.message.includes('session')) {
+                console.log('\n💡 Run sessions/01-create-session.ts first to create a session.');
+            }
+        }
+    }
+}
+
+// ============================================================================
+// Parallel Batch Execution
+// ============================================================================
+
+async function executeParallelBatch() {
+    console.log('\n' + '='.repeat(50));
+    console.log('⚡ Parallel Batch Execution');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
-    const sessionManager = new SessionManager({ sdk });
-
-    console.log('\nRPC SDK initialized');
-
-    // =========================================================================
-    // Create a Session for Batch Operations
-    // =========================================================================
-    
-    console.log('\nSECURITY Creating session for batch operations...');
-
-    const session = await sessionManager.createSession({
-        duration: 3600, // 1 hour
-        maxValue: parseEther('1.0'),
-        maxTotalValue: parseEther('5.0'),
-        // Allow multiple action types
-        allowedActions: ['transfer', 'execute', 'approve'],
-    });
-
-    console.log(`OK Session created: ${session.id}`);
-
-    // =========================================================================
-    // Example 1: Multi-Send (Airdrop Pattern)
-    // =========================================================================
-    
-    console.log('\n' + '='.repeat(50));
-    console.log(' Example 1: Multi-Send (Airdrop)');
-    console.log('='.repeat(50));
-
-    const recipients = [
-        { address: '0x1111111111111111111111111111111111111111', amount: parseEther('0.01') },
-        { address: '0x2222222222222222222222222222222222222222', amount: parseEther('0.02') },
-        { address: '0x3333333333333333333333333333333333333333', amount: parseEther('0.015') },
-        { address: '0x4444444444444444444444444444444444444444', amount: parseEther('0.025') },
-        { address: '0x5555555555555555555555555555555555555555', amount: parseEther('0.01') },
-    ];
-
-    console.log(`\nNOTE Sending to ${recipients.length} recipients in one transaction...`);
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
 
     try {
-        const result = await sessionManager.executeBatchWithSession(
-            recipients.map((r) => ({
-                action: 'transfer',
-                token: 'native',
-                recipient: r.address,
-                amount: r.amount,
-            })),
-            session
-        );
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
+        const sessionManager = new SessionManager({
+            hubClient,
+            passkeyManager: sdk.passkey,
+        });
 
-        console.log('OK Multi-send complete!');
-        console.log(`   TX Hash: ${result.transactionHash}`);
-        console.log(`   Recipients: ${recipients.length}`);
-        console.log(`   Total: ${formatEther(recipients.reduce((s, r) => s + r.amount, 0n))} ETH`);
-        console.log(`   Gas Used: ${result.gasUsed}`);
-    } catch (error) {
-        if (error instanceof Error) {
-            console.log(`ERROR Error: ${error.message}`);
+        const sessions = await sessionManager.getSessions();
+        if (sessions.length === 0) {
+            console.log('   ⚠️  No active sessions. Run 01-create-session.ts first.');
+            return;
         }
-    }
 
-    // =========================================================================
-    // Example 2: DeFi Workflow (Approve + Swap + Stake)
-    // =========================================================================
-    
-    console.log('\n' + '='.repeat(50));
-    console.log(' Example 2: DeFi Workflow');
-    console.log('='.repeat(50));
+        const session = sessions[0];
+        const chainConfig = sdk.getChainConfig();
 
-    console.log(`
-Executing complex DeFi workflow:
-1. Approve USDC for DEX
-2. Swap USDC → ETH
-3. Stake ETH
-4. Claim existing rewards
-    `);
+        console.log('\n📦 Executing transactions in parallel...\n');
 
-    try {
-        const workflow = await sessionManager.executeBatchWithSession([
-            // Step 1: Approve USDC
-            {
-                action: 'execute',
-                target: CONTRACTS.USDC,
-                data: encodeApprove(CONTRACTS.DEX, parseUnits('1000', 6)),
-                value: 0n,
-            },
-            // Step 2: Swap USDC for ETH
-            {
-                action: 'execute',
-                target: CONTRACTS.DEX,
-                data: encodeSwap(CONTRACTS.USDC, 'native', parseUnits('100', 6)),
-                value: 0n,
-            },
-            // Step 3: Stake ETH
-            {
-                action: 'execute',
-                target: CONTRACTS.STAKING,
-                data: encodeStake(),
-                value: parseEther('0.5'),
-            },
-            // Step 4: Claim rewards
-            {
-                action: 'execute',
-                target: CONTRACTS.STAKING,
-                data: encodeClaim(),
-                value: 0n,
-            },
-        ], session);
+        const promises = RECIPIENTS.map((recipient, i) => {
+            return sessionManager.executeWithSession(
+                {
+                    targetChain: chainConfig.wormholeChainId,
+                    token: 'native',
+                    recipient,
+                    amount: parseEther('0.0001'),
+                },
+                session,
+                signer
+            ).then(result => {
+                console.log(`   ✅ Transaction ${i + 1} complete`);
+                return { success: true, hash: result.transactionHash };
+            }).catch(error => {
+                console.log(`   ❌ Transaction ${i + 1} failed`);
+                return { success: false, error: error.message };
+            });
+        });
 
-        console.log('OK DeFi workflow complete!');
-        console.log(`   TX Hash: ${workflow.transactionHash}`);
-        console.log(`   Operations: 4`);
-        console.log(`   Gas Saved: ~60% vs individual transactions`);
+        const results = await Promise.all(promises);
+
+        const successful = results.filter(r => r.success).length;
+        console.log(`\n✅ Completed ${successful}/${results.length} transactions in parallel`);
+
     } catch (error) {
-        if (error instanceof Error) {
-            console.log(`ERROR Error: ${error.message}`);
-        }
+        console.log('   ⚠️  Skipped (no credential or session)');
     }
-
-    // =========================================================================
-    // Example 3: Gaming Actions
-    // =========================================================================
-    
-    console.log('\n' + '='.repeat(50));
-    console.log(' Example 3: Gaming Actions');
-    console.log('='.repeat(50));
-
-    console.log(`
-Simulating game session:
-- Buy items from marketplace
-- Equip items to character
-- Join tournament (entry fee)
-    `);
-
-    const GAME_CONTRACT = '0xGAME000000000000000000000000000000000000';
-
-    try {
-        const gameActions = await sessionManager.executeBatchWithSession([
-            // Buy sword
-            {
-                action: 'execute',
-                target: GAME_CONTRACT,
-                data: encodeBuyItem('sword', 1),
-                value: parseEther('0.01'),
-            },
-            // Buy shield
-            {
-                action: 'execute',
-                target: GAME_CONTRACT,
-                data: encodeBuyItem('shield', 1),
-                value: parseEther('0.008'),
-            },
-            // Equip items
-            {
-                action: 'execute',
-                target: GAME_CONTRACT,
-                data: encodeEquipItems(['sword', 'shield']),
-                value: 0n,
-            },
-            // Join tournament
-            {
-                action: 'execute',
-                target: GAME_CONTRACT,
-                data: encodeJoinTournament(1234),
-                value: parseEther('0.05'),
-            },
-        ], session);
-
-        console.log('OK Game actions complete!');
-        console.log(`   All items purchased and equipped`);
-        console.log(`   Tournament entry confirmed`);
-        console.log(`   TX: ${gameActions.transactionHash}`);
-    } catch (error) {
-        if (error instanceof Error) {
-            console.log(`ERROR Error: ${error.message}`);
-        }
-    }
-
-    // =========================================================================
-    // Session Summary
-    // =========================================================================
-    
-    console.log('\n' + '='.repeat(50));
-    console.log(' Session Summary');
-    console.log('='.repeat(50));
-
-    const status = await sessionManager.getSessionStatus(session.id);
-    console.log(`\n   Session ID: ${session.id}`);
-    console.log(`   Transactions: ${status.transactionCount}`);
-    console.log(`   Total Value: ${formatEther(status.totalValueSpent)} ETH`);
-    console.log(`   Time Used: ${Math.floor((Date.now() - session.createdAt) / 1000)}s`);
-    console.log(`   Time Remaining: ${status.timeRemaining}s`);
 }
 
 // ============================================================================
-// Helper Functions (encoding contract calls)
+// Session Usage Patterns
 // ============================================================================
 
-function encodeApprove(spender: string, amount: bigint): string {
-    // ERC20 approve(address,uint256)
-    const selector = '0x095ea7b3';
-    const paddedSpender = spender.slice(2).padStart(64, '0');
-    const paddedAmount = amount.toString(16).padStart(64, '0');
-    return `${selector}${paddedSpender}${paddedAmount}`;
+async function showUsagePatterns() {
+    console.log('\n' + '='.repeat(50));
+    console.log('💡 Session Usage Patterns');
+    console.log('='.repeat(50));
+
+    console.log(`
+1. Sequential Batch:
+   • Execute transactions one after another
+   • Easier error handling
+   • Predictable nonce management
+   • Slower overall execution
+
+2. Parallel Batch:
+   • Execute multiple transactions simultaneously
+   • Faster overall execution
+   • Requires careful nonce management
+   • More complex error handling
+
+3. Conditional Batch:
+   • Execute next transaction based on previous result
+   • Useful for dependent operations
+   • Better error recovery
+   • More flexible logic
+
+4. Scheduled Batch:
+   • Execute transactions at specific times
+   • Useful for automation
+   • Requires persistent session storage
+   • Consider session expiry
+
+Best Practices:
+  • Check session validity before batch
+  • Handle individual transaction failures
+  • Monitor session value limits
+  • Refresh session if needed
+  • Revoke session after batch complete
+    `);
 }
 
-function encodeSwap(tokenIn: string, tokenOut: string, amountIn: bigint): string {
-    // Simplified swap encoding
-    return `0xswap${tokenIn}${tokenOut}${amountIn}`;
+// ============================================================================
+// Error Handling Guide
+// ============================================================================
+
+async function showErrorHandling() {
+    console.log('\n' + '='.repeat(50));
+    console.log('⚠️  Error Handling Guide');
+    console.log('='.repeat(50));
+
+    console.log(`
+Common Errors:
+
+1. "Session expired"
+   → Create new session or refresh existing one
+
+2. "Value exceeds session limit"
+   → Reduce transaction amount or create new session with higher limit
+
+3. "Session not active"
+   → Session was revoked or never created
+
+4. "Insufficient balance"
+   → Fund vault before executing batch
+
+5. "Nonce too low"
+   → Wait for previous transaction to confirm
+
+6. "Gas estimation failed"
+   → Check recipient address and token balance
+
+Recovery Strategies:
+
+• Retry failed transactions individually
+• Create new session if current one expired
+• Implement exponential backoff for retries
+• Log all transaction attempts for debugging
+• Monitor session status throughout batch
+    `);
 }
 
-function encodeStake(): string {
-    // stake()
-    return '0x3a4b66f1';
-}
-
-function encodeClaim(): string {
-    // claim()
-    return '0x4e71d92d';
-}
-
-function encodeBuyItem(item: string, quantity: number): string {
-    // buyItem(string,uint256)
-    return `0xbuy${item}${quantity}`;
-}
-
-function encodeEquipItems(items: string[]): string {
-    // equipItems(string[])
-    return `0xequip${items.join('')}`;
-}
-
-function encodeJoinTournament(tournamentId: number): string {
-    // joinTournament(uint256)
-    return `0xjoin${tournamentId}`;
-}
-
-// Run the example
-main().catch(console.error);
+// Run examples
+main()
+    .then(() => executeParallelBatch())
+    .then(() => showUsagePatterns())
+    .then(() => showErrorHandling())
+    .catch(console.error);

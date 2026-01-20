@@ -2,6 +2,7 @@
   "name": "demo_play",
   "version": "0.1.0",
   "private": true,
+  "description": "Veridex SDK demo application - Create passkey-based Web3 wallets",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -9,7 +10,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@veridex/sdk": "^1.0.0-beta.16",
+    "@veridex/sdk": "workspace:*",
     "ethers": "^6.13.0",
     "next": "16.1.2",
     "react": "19.2.3",

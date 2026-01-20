@@ -1,16 +1,43 @@
+/**
+ * Veridex Demo App - Global Styles
+ * 
+ * This stylesheet defines the visual design for the Veridex demo application.
+ * 
+ * Design System:
+ * - Dark theme with purple accents
+ * - Glassmorphism effects (backdrop blur, transparency)
+ * - Smooth animations and transitions
+ * - Responsive layout
+ * 
+ * Color Palette:
+ * - Primary: Indigo (#6366f1) - Main actions and highlights
+ * - Background: Dark (#0a0a0c) - Main background
+ * - Card: Semi-transparent dark (#16161c) - Card backgrounds
+ * - Success: Green (#10b981) - Success states
+ * - Error: Red (#ef4444) - Error states
+ */
+
+/* ============================================================================
+   CSS Variables (Design Tokens)
+   ============================================================================ */
+
 :root {
-  --background: #0a0a0c;
-  --foreground: #ededed;
-  --primary: #6366f1;
-  --primary-hover: #4f46e5;
-  --secondary: #1e1e24;
-  --border: #2e2e36;
-  --card-bg: rgba(22, 22, 28, 0.6);
-  --success: #10b981;
-  --error: #ef4444;
+  /* Colors */
+  --background: #0a0a0c;           /* Main background color */
+  --foreground: #ededed;           /* Main text color */
+  --primary: #6366f1;              /* Primary brand color (indigo) */
+  --primary-hover: #4f46e5;        /* Primary hover state */
+  --secondary: #1e1e24;            /* Secondary background */
+  --border: #2e2e36;               /* Border color */
+  --card-bg: rgba(22, 22, 28, 0.6); /* Card background with transparency */
+  --success: #10b981;              /* Success state color */
+  --error: #ef4444;                /* Error state color */
+  
+  /* Typography */
   --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
+/* Dark mode (default) */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0c;
@@ -18,12 +45,24 @@
   }
 }
 
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+
+/**
+ * Reset box model and spacing
+ * Ensures consistent sizing across browsers
+ */
 * {
   box-sizing: border-box;
   padding: 0;
   margin: 0;
 }
 
+/**
+ * HTML and body base styles
+ * Sets up the foundation for the entire app
+ */
 html,
 body {
   max-width: 100vw;
@@ -31,15 +70,26 @@ body {
   font-family: var(--font-sans);
   background: var(--background);
   color: var(--foreground);
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased; /* Smoother text rendering on Mac */
 }
 
+/**
+ * Link styles
+ * Inherits color and removes default underline
+ */
 a {
   color: inherit;
   text-decoration: none;
 }
 
-/* Utilities */
+/* ============================================================================
+   Layout Components
+   ============================================================================ */
+
+/**
+ * Main container
+ * Centers content and adds gradient background effect
+ */
 .container {
   max-width: 1200px;
   margin: 0 auto;
@@ -49,13 +99,18 @@ a {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  /* Radial gradient for visual interest */
   background: radial-gradient(circle at 50% 10%, #2e1065 0%, transparent 40%);
 }
 
+/**
+ * Card component
+ * Glassmorphism effect with backdrop blur
+ */
 .card {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);      /* Glassmorphism effect */
   padding: 2rem;
   border-radius: 16px;
   width: 100%;
@@ -64,13 +119,26 @@ a {
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
+/**
+ * Card hover effect
+ * Subtle border color change on hover
+ */
 .card:hover {
   border-color: #3e3e4a;
 }
 
+/* ============================================================================
+   Typography
+   ============================================================================ */
+
+/**
+ * Main title
+ * Gradient text effect for brand emphasis
+ */
 .title {
   font-size: 2.5rem;
   font-weight: 800;
+  /* Gradient text effect */
   background: linear-gradient(135deg, #fff 0%, #a5b4fc 100%);
   -webkit-background-clip: text;
   background-clip: text;
@@ -79,6 +147,10 @@ a {
   text-align: center;
 }
 
+/**
+ * Subtitle text
+ * Muted color for secondary information
+ */
 .subtitle {
   color: #a1a1aa;
   text-align: center;
@@ -86,6 +158,25 @@ a {
   font-size: 1.1rem;
 }
 
+/**
+ * Label text
+ * Used for form labels and helper text
+ */
+.label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #a1a1aa;
+}
+
+/* ============================================================================
+   Form Elements
+   ============================================================================ */
+
+/**
+ * Button component
+ * Primary action button with hover effects
+ */
 .btn {
   background: var(--primary);
   color: white;
@@ -104,29 +195,38 @@ a {
   margin-top: 1rem;
 }
 
+/**
+ * Button hover state
+ * Lift effect and glow
+ */
 .btn:hover {
   background: var(--primary-hover);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
+/**
+ * Button disabled state
+ * Reduced opacity and no interactions
+ */
 .btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
   transform: none;
 }
 
+/**
+ * Input group wrapper
+ * Spacing for form fields
+ */
 .input-group {
   margin-bottom: 1.5rem;
 }
 
-.label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-size: 0.9rem;
-  color: #a1a1aa;
-}
-
+/**
+ * Input field
+ * Text input with focus state
+ */
 .input {
   width: 100%;
   background: var(--secondary);
@@ -138,11 +238,23 @@ a {
   transition: border-color 0.2s;
 }
 
+/**
+ * Input focus state
+ * Highlight with primary color
+ */
 .input:focus {
   outline: none;
   border-color: var(--primary);
 }
 
+/* ============================================================================
+   Information Display
+   ============================================================================ */
+
+/**
+ * Info row
+ * Key-value pair display
+ */
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -150,19 +262,38 @@ a {
   border-bottom: 1px solid var(--border);
 }
 
+/**
+ * Remove border from last info row
+ */
 .info-row:last-child {
   border-bottom: none;
 }
 
+/**
+ * Info label (left side)
+ * Muted color for labels
+ */
 .info-label {
   color: #a1a1aa;
 }
 
+/**
+ * Info value (right side)
+ * Monospace font for technical values
+ */
 .info-value {
   font-family: monospace;
   color: #fff;
 }
 
+/* ============================================================================
+   Status Messages
+   ============================================================================ */
+
+/**
+ * Status message box
+ * Success state by default
+ */
 .status {
   margin-top: 1rem;
   padding: 0.8rem;
@@ -174,12 +305,24 @@ a {
   font-size: 0.9rem;
 }
 
+/**
+ * Error status variant
+ * Red color scheme for errors
+ */
 .status.error {
   background: rgba(239, 68, 68, 0.1);
   border-color: rgba(239, 68, 68, 0.2);
   color: var(--error);
 }
 
+/* ============================================================================
+   Loading Indicator
+   ============================================================================ */
+
+/**
+ * Loading spinner
+ * Animated circular loader
+ */
 .loader {
   border: 2px solid rgba(255, 255, 255, 0.1);
   border-left-color: white;
@@ -189,6 +332,10 @@ a {
   animation: spin 1s linear infinite;
 }
 
+/**
+ * Spin animation
+ * Continuous rotation for loader
+ */
 @keyframes spin {
   to {
     transform: rotate(360deg);

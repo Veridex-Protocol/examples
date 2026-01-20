@@ -1,22 +1,17 @@
 /**
- * Example: Session Key Management
+ * Session Example 01: Create Session
  * 
- * Session keys allow users to authorize a temporary key that can execute
- * transactions without requiring passkey signatures for each action.
+ * This example demonstrates how to create a session key for
+ * temporary delegated access without repeated passkey prompts.
  * 
- * This is perfect for:
- * - Gaming: Fast in-game transactions
- * - DeFi: Automated trading strategies
- * - Social: Tipping without friction
- * 
- * Run: npx ts-node sessions/01-create-session.ts
+ * Run: npm run session:create
  */
 
-import { createSDK, SessionManager } from '@veridex/sdk';
-import { parseEther } from 'ethers';
+import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
+import { parseEther, formatEther } from 'ethers';
 
 async function main() {
-    console.log(' Veridex Session Key Example\n');
+    console.log('🔑 Create Session Key Example\n');
     console.log('='.repeat(50));
 
     // =========================================================================
@@ -25,199 +20,214 @@ async function main() {
     
     const sdk = createSDK('base');
     
-    console.log('\nRPC SDK initialized');
-    console.log(`LOCATION Vault: ${sdk.getVaultAddress()}`);
-
-    // =========================================================================
-    // Step 2: Create Session Manager
-    // =========================================================================
+    console.log('\n📡 SDK initialized for Base testnet');
     
-    console.log('\nTOOLS Initializing session manager...');
-    
-    const sessionManager = new SessionManager({
-        sdk,
-        storage: 'indexeddb', // Secure storage for session keys
-    });
-
-    console.log('OK Session manager ready');
-
-    // =========================================================================
-    // Step 3: Create a Session
-    // =========================================================================
-    
-    console.log('\nSECURITY Creating session key...');
-    console.log('   (This requires ONE passkey signature)\n');
-
     try {
-        // Create a session with specific constraints
-        const session = await sessionManager.createSession({
-            // Duration: 1 hour
-            duration: 3600,
-            
-            // Maximum value per transaction
-            maxValue: parseEther('0.1'),
-            
-            // Maximum total value for entire session
-            maxTotalValue: parseEther('1.0'),
-            
-            // Optional: Restrict to specific tokens
-            allowedTokens: ['native'], // Only ETH
-            
-            // Optional: Restrict to specific recipients
-            // allowedRecipients: ['0x...'],
-            
-            // Optional: Restrict to specific actions
-            allowedActions: ['transfer'], // No bridging
+        const vaultAddress = sdk.getVaultAddress();
+        console.log(`📍 Vault address: ${vaultAddress}`);
+
+        // =====================================================================
+        // Step 2: Create Session Manager
+        // =====================================================================
+        
+        console.log('\n🔧 Setting up session manager...');
+        
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
+        const sessionManager = new SessionManager({
+            hubClient,
+            passkeyManager: sdk.passkey,
         });
 
-        console.log('OK Session created successfully!');
-        console.log(`\nNOTE Session Details:`);
-        console.log(`   Session ID: ${session.id}`);
-        console.log(`   Created: ${new Date(session.createdAt).toISOString()}`);
-        console.log(`   Expires: ${new Date(session.expiresAt).toISOString()}`);
-        console.log(`   Max Value: ${session.maxValue} wei`);
-        console.log(`   Max Total: ${session.maxTotalValue} wei`);
-        console.log(`   Allowed Tokens: ${session.allowedTokens.join(', ') || 'All'}`);
-        console.log(`   Allowed Actions: ${session.allowedActions.join(', ') || 'All'}`);
+        console.log('✅ Session manager ready');
 
         // =====================================================================
-        // Step 4: Execute Transactions with Session
+        // Step 3: Create Session with Custom Parameters
         // =====================================================================
         
-        console.log('\nSTART Executing transactions with session key...');
-        console.log('   (No passkey prompts needed!)\n');
+        console.log('\n🔐 Creating session key...');
+        console.log('   (This will trigger passkey authentication)');
 
-        // Transaction 1
-        console.log('   TX 1: Sending 0.001 ETH...');
-        const tx1 = await sessionManager.executeWithSession({
-            action: 'transfer',
-            token: 'native',
-            recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
-            amount: parseEther('0.001'),
-        }, session);
-        console.log(`   OK TX 1 complete: ${tx1.transactionHash.slice(0, 20)}...`);
+        const session = await sessionManager.createSession({
+            duration: 3600, // 1 hour
+            maxValue: parseEther('0.1'), // Max 0.1 ETH per transaction
+            requireUV: true, // Require user verification
+        });
 
-        // Transaction 2 (no passkey prompt!)
-        console.log('   TX 2: Sending 0.002 ETH...');
-        const tx2 = await sessionManager.executeWithSession({
-            action: 'transfer',
-            token: 'native',
-            recipient: '0x8626f6940E2eb28930eFb4CeF49B2d1F2C9C1199',
-            amount: parseEther('0.002'),
-        }, session);
-        console.log(`   OK TX 2 complete: ${tx2.transactionHash.slice(0, 20)}...`);
-
-        // Transaction 3 (still no prompt!)
-        console.log('   TX 3: Sending 0.001 ETH...');
-        const tx3 = await sessionManager.executeWithSession({
-            action: 'transfer',
-            token: 'native',
-            recipient: '0xdD2FD4581271e230360230F9337D5c0430Bf44C0',
-            amount: parseEther('0.001'),
-        }, session);
-        console.log(`   OK TX 3 complete: ${tx3.transactionHash.slice(0, 20)}...`);
-
-        console.log('\nDONE All transactions executed without additional prompts!');
+        console.log('\n✅ Session created successfully!');
+        console.log('\n📋 Session Details:');
+        console.log(`   Session Key Hash: ${session.sessionKeyHash}`);
+        console.log(`   Created: ${new Date().toISOString()}`);
+        console.log(`   Expires: ${new Date(session.expiry * 1000).toISOString()}`);
+        console.log(`   Duration: ${Math.floor((session.expiry - Date.now() / 1000) / 60)} minutes`);
+        console.log(`   Max Value: ${formatEther(session.maxValue)} ETH`);
+        console.log(`   Active: ${session.active ? 'Yes ✅' : 'No ❌'}`);
 
         // =====================================================================
-        // Step 5: Check Session Status
+        // Step 4: Verify Session is Active
         // =====================================================================
         
-        console.log('\n Session Status:');
-        const status = await sessionManager.getSessionStatus(session.id);
-        console.log(`   Transactions: ${status.transactionCount}`);
-        console.log(`   Total Value Spent: ${status.totalValueSpent} wei`);
-        console.log(`   Remaining Value: ${status.remainingValue} wei`);
-        console.log(`   Time Remaining: ${status.timeRemaining} seconds`);
+        console.log('\n🔍 Verifying session status...');
+        
+        const isActive = await sessionManager.isSessionActive(session);
+        console.log(`   Session is ${isActive ? 'active ✅' : 'inactive ❌'}`);
+
+        // =====================================================================
+        // Step 5: Save Session for Later Use
+        // =====================================================================
+        
+        console.log('\n💾 Session storage:');
+        console.log('   Session keys are automatically stored in browser storage');
+        console.log('   You can retrieve them later with sessionManager.getSessions()');
+
+        // Get all active sessions
+        const sessions = await sessionManager.getSessions();
+        console.log(`   Total active sessions: ${sessions.length}`);
+
+        // =====================================================================
+        // Step 6: Display Usage Instructions
+        // =====================================================================
+        
+        console.log('\n' + '='.repeat(50));
+        console.log('🚀 Next Steps:');
+        console.log('='.repeat(50));
+        console.log(`
+1. Use this session to execute transactions without passkey prompts
+   See: 02-execute-batch.ts
+
+2. The session will automatically expire after 1 hour
+
+3. You can manually revoke it anytime
+   See: 03-revoke-session.ts
+
+4. Create multiple sessions with different limits for different use cases
+        `);
 
     } catch (error) {
         if (error instanceof Error) {
-            console.error('\nERROR Error:', error.message);
+            console.error('\n❌ Error:', error.message);
             
-            if (error.message.includes('exceeds')) {
-                console.log('\n Transaction exceeds session limits.');
-            } else if (error.message.includes('expired')) {
-                console.log('\n Session has expired. Create a new one.');
+            if (error.message.includes('No credential')) {
+                console.log('\n💡 Run basic/01-create-wallet.ts first to register a passkey.');
+            } else if (error.message.includes('cancelled')) {
+                console.log('\n💡 User cancelled the passkey authentication.');
             }
         }
     }
 }
 
 // ============================================================================
-// Session Persistence Example
+// Create Sessions with Different Configurations
 // ============================================================================
 
-async function sessionPersistence() {
+async function createMultipleSessions() {
     console.log('\n' + '='.repeat(50));
-    console.log(' Session Persistence');
+    console.log('🔑 Multiple Session Configurations');
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
-    const sessionManager = new SessionManager({ sdk });
+    const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
+    const sessionManager = new SessionManager({
+        hubClient,
+        passkeyManager: sdk.passkey,
+    });
 
-    console.log('\nNOTE Managing persisted sessions...\n');
+    console.log('\n📝 Creating sessions with different limits...\n');
 
-    // List all active sessions
-    const sessions = await sessionManager.listSessions();
-    console.log(`Found ${sessions.length} active sessions:`);
-    
-    for (const session of sessions) {
-        const remaining = Math.floor((session.expiresAt - Date.now()) / 1000);
-        console.log(`   • ${session.id}: expires in ${remaining}s`);
+    // Gaming session - short duration, low value
+    console.log('1. Gaming Session:');
+    try {
+        const gamingSession = await sessionManager.createSession({
+            duration: 1800, // 30 minutes
+            maxValue: parseEther('0.01'), // 0.01 ETH max
+            requireUV: false, // Faster, less secure
+        });
+        console.log(`   ✅ Created (expires in 30 min, max 0.01 ETH)`);
+    } catch (e: any) {
+        console.log(`   ⚠️  ${e.message}`);
     }
 
-    // Resume a session
-    if (sessions.length > 0) {
-        console.log('\nIN PROGRESS Resuming first session...');
-        const resumedSession = await sessionManager.resumeSession(sessions[0].id);
-        console.log(`   OK Session resumed: ${resumedSession.id}`);
+    // Trading session - medium duration, higher value
+    console.log('\n2. Trading Session:');
+    try {
+        const tradingSession = await sessionManager.createSession({
+            duration: 7200, // 2 hours
+            maxValue: parseEther('1.0'), // 1 ETH max
+            requireUV: true, // More secure
+        });
+        console.log(`   ✅ Created (expires in 2 hours, max 1 ETH)`);
+    } catch (e: any) {
+        console.log(`   ⚠️  ${e.message}`);
     }
 
-    // Clear expired sessions
-    console.log('\n Cleaning expired sessions...');
-    await sessionManager.cleanExpiredSessions();
-    console.log('   OK Cleanup complete');
+    // Micro-transactions session - long duration, very low value
+    console.log('\n3. Micro-transactions Session:');
+    try {
+        const microSession = await sessionManager.createSession({
+            duration: 86400, // 24 hours
+            maxValue: parseEther('0.001'), // 0.001 ETH max
+            requireUV: false,
+        });
+        console.log(`   ✅ Created (expires in 24 hours, max 0.001 ETH)`);
+    } catch (e: any) {
+        console.log(`   ⚠️  ${e.message}`);
+    }
 }
 
 // ============================================================================
-// Session Events Example
+// Session Configuration Guide
 // ============================================================================
 
-async function sessionEvents() {
+async function showConfigurationGuide() {
     console.log('\n' + '='.repeat(50));
-    console.log('RPC Session Events');
+    console.log('📚 Session Configuration Guide');
     console.log('='.repeat(50));
 
-    const sdk = createSDK('base');
-    const sessionManager = new SessionManager({ sdk });
+    console.log(`
+Duration Guidelines:
+  • Short (15-30 min): Gaming, quick tasks
+  • Medium (1-4 hours): Trading, DeFi operations
+  • Long (12-24 hours): Automation, scheduled tasks
+  • Maximum: 24 hours (enforced by contract)
 
-    // Subscribe to session events
-    sessionManager.on('sessionCreated', (session) => {
-        console.log(`    Session created: ${session.id}`);
-    });
+Value Limits:
+  • Micro (< 0.01 ETH): Tips, small purchases
+  • Low (0.01-0.1 ETH): Gaming, social
+  • Medium (0.1-1 ETH): Trading, swaps
+  • High (> 1 ETH): Large operations
+  • Unlimited (0): Not recommended
 
-    sessionManager.on('transactionExecuted', (tx) => {
-        console.log(`   OK TX executed: ${tx.hash}`);
-    });
+User Verification:
+  • requireUV: true
+    - More secure
+    - May prompt for biometric
+    - Recommended for high-value sessions
+  
+  • requireUV: false
+    - Faster execution
+    - No additional prompts
+    - Suitable for low-value sessions
 
-    sessionManager.on('sessionExpiring', (session) => {
-        console.log(`   WARN  Session expiring soon: ${session.id}`);
-    });
-
-    sessionManager.on('sessionExpired', (session) => {
-        console.log(`   ERROR Session expired: ${session.id}`);
-    });
-
-    sessionManager.on('limitReached', (session, limit) => {
-        console.log(`    Limit reached: ${limit} for ${session.id}`);
-    });
-
-    console.log('\nNOTE Event listeners registered');
-    console.log('   Events will fire as sessions are used...\n');
+Security vs Convenience:
+  ┌─────────────────────────────────────┐
+  │                                     │
+  │  High Security:                     │
+  │  • Short duration                   │
+  │  • Low value limit                  │
+  │  • requireUV: true                  │
+  │                                     │
+  │  High Convenience:                  │
+  │  • Longer duration                  │
+  │  • Higher value limit               │
+  │  • requireUV: false                 │
+  │                                     │
+  │  Balance based on your use case!    │
+  │                                     │
+  └─────────────────────────────────────┘
+    `);
 }
 
 // Run examples
 main()
-    .then(() => sessionPersistence())
-    .then(() => sessionEvents())
+    .then(() => createMultipleSessions())
+    .then(() => showConfigurationGuide())
     .catch(console.error);
