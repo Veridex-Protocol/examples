@@ -20,26 +20,47 @@ A Next.js application demonstrating how to create passkey-based Web3 wallets usi
 
 ### Installation
 
-1. Install dependencies from the root:
+#### Quick Setup (Recommended)
+
+Use the setup script to automatically configure everything:
+
+```bash
+cd examples/demo_play
+./setup.sh
+```
+
+This script will:
+1. Check Node.js version
+2. Build the Veridex SDK
+3. Install dependencies
+4. Verify installation
+5. Clean caches
+
+#### Manual Setup
+
+1. Build the SDK first:
    ```bash
-   npm install
-   # or
-   bun install
+   cd packages/sdk
+   npm run build
    ```
 
-2. Navigate to the demo directory:
+2. Install dependencies from the root:
+   ```bash
+   cd ../..
+   npm install
+   ```
+
+3. Navigate to the demo directory:
    ```bash
    cd examples/demo_play
    ```
 
-3. Run the development server:
+4. Run the development server:
    ```bash
    npm run dev
-   # or
-   bun run dev
    ```
 
-4. Open [http://localhost:3000](http://localhost:3000) in your browser
+5. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ## 📁 Project Structure
 
@@ -194,6 +215,32 @@ const sdk = createSDK('base', {
 - Check browser console for errors
 - Ensure you have internet connection
 - Try refreshing the page
+
+## 🐛 Troubleshooting
+
+### "Failed to initialize SDK"
+
+**Quick Fix:**
+```bash
+./setup.sh
+```
+
+**Manual Fix:**
+1. Build the SDK: `cd packages/sdk && npm run build`
+2. Clear caches: `rm -rf .next node_modules`
+3. Reinstall: `npm install`
+4. Start dev server: `npm run dev`
+
+### "WebAuthn not supported"
+- Ensure you're using HTTPS or localhost
+- Use a modern browser (Chrome 67+, Firefox 60+, Safari 14+)
+- Check that WebAuthn is enabled in browser settings
+
+### "Passkey request cancelled"
+- User dismissed the biometric prompt
+- Try again and complete the authentication
+
+For detailed troubleshooting, see [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)
 
 ## 📖 Learn More
 
