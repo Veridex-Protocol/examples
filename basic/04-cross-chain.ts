@@ -78,9 +78,9 @@ async function main() {
         console.log(`   Token: ETH (native)`);
         console.log(`   Amount: ${formatEther(bridgeAmount)} ETH`);
         console.log(`   Recipient: ${vaultAddress}`);
-        console.log(`   Estimated Gas: ${prepared.estimatedGas}`);
-        console.log(`   Wormhole Fee: ${formatEther(prepared.wormholeFee)} ETH`);
-        console.log(`   Total Cost: ${prepared.formattedCost}`);
+        console.log(`   Estimated Gas: ${prepared.fees.sourceGas}`);
+        console.log(`   Wormhole Fee: ${formatEther(prepared.fees.messageFee)} ETH`);
+        console.log(`   Total Cost: ${prepared.fees.formattedTotal}`);
 
         // =====================================================================
         // Step 4: Get Bridge Fees Breakdown
@@ -96,9 +96,9 @@ async function main() {
         });
         
         console.log(`   Source Gas: ${formatEther(fees.sourceGas)} ETH`);
-        console.log(`   Wormhole Fee: ${formatEther(fees.wormholeFee)} ETH`);
-        console.log(`   Destination Gas: ${formatEther(fees.destinationGas)} ETH`);
-        console.log(`   Total: ${formatEther(fees.total)} ETH`);
+        console.log(`   Wormhole Fee: ${formatEther(fees.messageFee)} ETH`);
+        console.log(`   Relayer Fee: ${formatEther(fees.relayerFee)} ETH`);
+        console.log(`   Total: ${formatEther(fees.totalCost)} ETH`);
 
         // =====================================================================
         // Step 5: Execute Bridge (with passkey signature)
@@ -114,7 +114,7 @@ async function main() {
         console.log(`\n📋 Transaction Details:`);
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Sequence: ${result.sequence}`);
-        console.log(`   VAA ID: ${result.vaaId}`);
+        console.log(`   VAA: ${result.vaa ? 'Available' : 'Pending'}`);
 
         // =====================================================================
         // Step 6: Track Cross-Chain Progress
@@ -138,7 +138,7 @@ async function main() {
         // =====================================================================
         
         console.log('\n💰 Expected balances after bridge:');
-        console.log(`   Base: ${formatEther(balance.balance - bridgeAmount - fees.total)} ETH (decreased)`);
+        console.log(`   Base: ${formatEther(balance.balance - bridgeAmount - fees.totalCost)} ETH (decreased)`);
         console.log(`   Optimism: +${formatEther(bridgeAmount)} ETH (increased)`);
 
     } catch (error) {
@@ -189,9 +189,9 @@ async function bridgeViaRelayer() {
         );
 
         console.log('\n✅ Bridge complete!');
-        console.log(`   Source TX: ${result.sourceTxHash}`);
-        console.log(`   Destination TX: ${result.destinationTxHash}`);
-        console.log(`   Total Time: ${result.totalTimeMs}ms`);
+        console.log(`   Source TX: ${result.transactionHash}`);
+        console.log(`   Destination TX: ${result.destinationTxHash ?? 'pending'}`);
+        console.log(`   Total Time: ${result.duration}ms`);
     } catch (error) {
         console.log('   ⚠️  Relayer not available or credential not registered');
     }
@@ -225,8 +225,8 @@ async function bridgeERC20() {
         });
 
         console.log(`   Amount: 10 USDC`);
-        console.log(`   Estimated Gas: ${prepared.estimatedGas}`);
-        console.log(`   Wormhole Fee: ${formatEther(prepared.wormholeFee)} ETH`);
+        console.log(`   Estimated Gas: ${prepared.fees.sourceGas}`);
+        console.log(`   Wormhole Fee: ${formatEther(prepared.fees.messageFee)} ETH`);
 
         const result = await sdk.executeBridge(prepared, signer);
 

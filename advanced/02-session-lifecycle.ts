@@ -8,7 +8,7 @@
  */
 
 import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-import { parseEther, formatEther, Wallet, JsonRpcProvider } from 'ethers';
+import { parseEther, formatEther, Wallet, JsonRpcProvider, getBytes } from 'ethers';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 const RECIPIENT = '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7';
@@ -32,11 +32,18 @@ async function main() {
         console.log(`📍 Vault address: ${vaultAddress}`);
 
         // Create session manager
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-        const sessionManager = new SessionManager({
+        const credential = sdk.getCredential();
+        if (!credential) {
+            throw new Error('No credential set. Run 01-create-wallet.ts first.');
+        }
+
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
+        const sessionManager = new SessionManager(
+            credential,
             hubClient,
-            passkeyManager: sdk.passkey,
-        });
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 3600, maxValue: parseEther('0.1') },
+        );
 
         console.log('✅ Session manager initialized');
 
@@ -47,17 +54,13 @@ async function main() {
         console.log('\n🔐 Creating session key...');
         console.log('   (This requires one passkey authentication)');
 
-        const session = await sessionManager.createSession({
-            duration: 3600, // 1 hour
-            maxValue: parseEther('0.1'), // Max 0.1 ETH per transaction
-            requireUV: true, // Require user verification
-        });
+        const session = await sessionManager.createSession();
 
         console.log('\n✅ Session created successfully!');
-        console.log(`   Session Key Hash: ${session.sessionKeyHash}`);
-        console.log(`   Expires: ${new Date(session.expiry * 1000).toISOString()}`);
+        console.log(`   Session Key Hash: ${session.keyHash}`);
+        console.log(`   Expires: ${new Date(session.expiry).toISOString()}`);
         console.log(`   Max Value: ${formatEther(session.maxValue)} ETH`);
-        console.log(`   Active: ${session.active ? 'Yes' : 'No'}`);
+        console.log(`   Active: ${sessionManager.isActive() ? 'Yes' : 'No'}`);
 
         // =====================================================================
         // Step 3: Use Session for Multiple Transactions
@@ -68,20 +71,28 @@ async function main() {
 
         const chainConfig = sdk.getChainConfig();
         
+        // Helper to sign a transfer action with the session
+        async function signTransfer(amount: bigint) {
+            const actionPayload = await sdk.buildTransferPayload({
+                targetChain: chainConfig.wormholeChainId,
+                token: 'native',
+                recipient: RECIPIENT,
+                amount,
+            });
+            return sessionManager.signAction({
+                action: 'transfer',
+                targetChain: chainConfig.wormholeChainId,
+                payload: getBytes(actionPayload),
+                nonce: Number(await sdk.getNonce()),
+                value: amount,
+            });
+        }
+
         // Transaction 1
         console.log('\n   Transaction 1:');
         try {
-            const result1 = await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: RECIPIENT,
-                    amount: parseEther('0.0001'),
-                },
-                session,
-                signer
-            );
-            console.log(`   ✅ TX Hash: ${result1.transactionHash}`);
+            const signed1 = await signTransfer(parseEther('0.0001'));
+            console.log(`   ✅ Signed: ${signed1.signature.sessionKeyHash.slice(0, 20)}...`);
         } catch (e: any) {
             console.log(`   ⚠️  ${e.message}`);
         }
@@ -89,17 +100,8 @@ async function main() {
         // Transaction 2
         console.log('\n   Transaction 2:');
         try {
-            const result2 = await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: RECIPIENT,
-                    amount: parseEther('0.0001'),
-                },
-                session,
-                signer
-            );
-            console.log(`   ✅ TX Hash: ${result2.transactionHash}`);
+            const signed2 = await signTransfer(parseEther('0.0001'));
+            console.log(`   ✅ Signed: ${signed2.signature.sessionKeyHash.slice(0, 20)}...`);
         } catch (e: any) {
             console.log(`   ⚠️  ${e.message}`);
         }
@@ -107,17 +109,8 @@ async function main() {
         // Transaction 3
         console.log('\n   Transaction 3:');
         try {
-            const result3 = await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: RECIPIENT,
-                    amount: parseEther('0.0001'),
-                },
-                session,
-                signer
-            );
-            console.log(`   ✅ TX Hash: ${result3.transactionHash}`);
+            const signed3 = await signTransfer(parseEther('0.0001'));
+            console.log(`   ✅ Signed: ${signed3.signature.sessionKeyHash.slice(0, 20)}...`);
         } catch (e: any) {
             console.log(`   ⚠️  ${e.message}`);
         }
@@ -130,8 +123,8 @@ async function main() {
         
         console.log('\n📊 Session status:');
         
-        const isActive = await sessionManager.isSessionActive(session);
-        const timeRemaining = session.expiry - Math.floor(Date.now() / 1000);
+        const isActive = sessionManager.isActive();
+        const timeRemaining = sessionManager.getTimeRemaining();
         
         console.log(`   Active: ${isActive ? 'Yes' : 'No'}`);
         console.log(`   Time Remaining: ${Math.floor(timeRemaining / 60)} minutes`);
@@ -146,16 +139,7 @@ async function main() {
         // Try to exceed max value
         console.log('\n   Attempting transaction above limit:');
         try {
-            await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: RECIPIENT,
-                    amount: parseEther('0.2'), // Exceeds 0.1 ETH limit
-                },
-                session,
-                signer
-            );
+            await signTransfer(parseEther('0.2')); // Exceeds 0.1 ETH limit
             console.log('   ❌ Should have been rejected!');
         } catch (e: any) {
             console.log(`   ✅ Correctly rejected: ${e.message}`);
@@ -168,9 +152,9 @@ async function main() {
         console.log('\n🔄 Refreshing session...');
         
         try {
-            const refreshedSession = await sessionManager.refreshSession(session);
+            const refreshedSession = await sessionManager.refreshSession();
             console.log('✅ Session refreshed!');
-            console.log(`   New expiry: ${new Date(refreshedSession.expiry * 1000).toISOString()}`);
+            console.log(`   New expiry: ${new Date(refreshedSession.expiry).toISOString()}`);
         } catch (e: any) {
             console.log(`⚠️  Refresh not needed or failed: ${e.message}`);
         }
@@ -181,27 +165,18 @@ async function main() {
         
         console.log('\n🚫 Revoking session...');
         
-        await sessionManager.revokeSession(session);
+        await sessionManager.revokeSession();
         
         console.log('✅ Session revoked successfully!');
 
         // Verify session is no longer active
-        const isStillActive = await sessionManager.isSessionActive(session);
+        const isStillActive = sessionManager.isActive();
         console.log(`   Active: ${isStillActive ? 'Yes' : 'No'}`);
 
         // Try to use revoked session
         console.log('\n   Attempting to use revoked session:');
         try {
-            await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: RECIPIENT,
-                    amount: parseEther('0.0001'),
-                },
-                session,
-                signer
-            );
+            await signTransfer(parseEther('0.0001'));
             console.log('   ❌ Should have been rejected!');
         } catch (e: any) {
             console.log(`   ✅ Correctly rejected: ${e.message}`);

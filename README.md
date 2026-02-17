@@ -6,6 +6,8 @@ Production-ready examples demonstrating how to integrate with the Veridex Protoc
 
 Veridex enables **passwordless, cross-chain authentication** using WebAuthn/Passkeys (P-256/secp256r1). Users get a deterministic vault address across all chains derived from their passkey.
 
+> **📚 Full Documentation:** [docs.veridex.network](https://docs.veridex.network) · [veridex-documentation.vercel.app](https://veridex-documentation.vercel.app/)
+
 ## Quick Start
 
 ```bash
@@ -145,19 +147,19 @@ Create temporary keys for seamless UX without repeated passkey prompts:
 ```typescript
 import { SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
 
-const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-const sessionManager = new SessionManager({
+const credential = sdk.getCredential();
+const hubClient = new EVMHubClientAdapter(sdk.getChainClient(), signer);
+const sessionManager = new SessionManager(
+  credential,
   hubClient,
-  passkeyManager: sdk.passkey,
-});
+  (challenge) => sdk.passkey.sign(challenge),
+  { duration: 3600, maxValue: parseEther('0.1') },
+);
 
-const session = await sessionManager.createSession({
-  duration: 3600, // 1 hour
-  maxValue: parseEther('0.1'),
-});
+const session = await sessionManager.createSession();
 
-// Execute multiple transactions without biometric prompts
-await sessionManager.executeWithSession(params, session, signer);
+// Sign actions instantly without biometric prompts
+const signed = await sessionManager.signAction(actionParams);
 ```
 
 ### 4. Cross-Chain Messaging
@@ -252,36 +254,33 @@ const bridgeResult = await sdk.executeBridge(bridgePrepared, signer);
 ```typescript
 import { SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
 
-const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-const sessionManager = new SessionManager({
+const credential = sdk.getCredential();
+const hubClient = new EVMHubClientAdapter(sdk.getChainClient(), signer);
+const sessionManager = new SessionManager(
+  credential,
   hubClient,
-  passkeyManager: sdk.passkey,
-});
-
-// Create session
-const session = await sessionManager.createSession({
-  duration: 3600,
-  maxValue: parseEther('0.1'),
-  requireUV: true,
-});
-
-// Execute with session
-const result = await sessionManager.executeWithSession(
-  {
-    targetChain: 10004,
-    token: 'native',
-    recipient: '0x...',
-    amount: parseEther('0.01'),
-  },
-  session,
-  signer
+  (challenge) => sdk.passkey.sign(challenge),
+  { duration: 3600, maxValue: parseEther('0.1') },
 );
 
+// Create session (triggers one passkey auth)
+const session = await sessionManager.createSession();
+
+// Sign actions instantly (no biometric)
+const signed = await sessionManager.signAction({
+  action: 'transfer',
+  targetChain: 10004,
+  payload: getBytes(actionPayload),
+  nonce: Number(await sdk.getNonce()),
+  value: parseEther('0.01'),
+});
+
 // Check session status
-const isActive = await sessionManager.isSessionActive(session);
+const isActive = sessionManager.isActive();
+const timeLeft = sessionManager.getTimeRemaining();
 
 // Revoke session
-await sessionManager.revokeSession(session);
+await sessionManager.revokeSession();
 ```
 
 ### Utilities
@@ -396,7 +395,7 @@ MIT
 
 ## Links
 
-- [Documentation](https://docs.veridex.network)
+- [Official Documentation](https://docs.veridex.network) · [Mirror](https://veridex-documentation.vercel.app/)
 - [SDK Repository](https://github.com/Veridex-Protocol/sdk)
 - [Discord](https://discord.gg/veridex)
 - [Twitter](https://twitter.com/VeridexProtocol)

@@ -8,7 +8,7 @@
  */
 
 import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-import { parseEther, formatEther, Wallet, JsonRpcProvider } from 'ethers';
+import { parseEther, formatEther, Wallet, JsonRpcProvider, getBytes } from 'ethers';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 const RECIPIENTS = [
@@ -36,33 +36,34 @@ async function main() {
         const vaultAddress = sdk.getVaultAddress();
         console.log(`📍 Vault address: ${vaultAddress}`);
 
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-        const sessionManager = new SessionManager({
+        const credential = sdk.getCredential();
+        if (!credential) {
+            throw new Error('No credential set. Run 01-create-wallet.ts first.');
+        }
+
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
+        const sessionManager = new SessionManager(
+            credential,
             hubClient,
-            passkeyManager: sdk.passkey,
-        });
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 3600, maxValue: parseEther('0.1') },
+        );
 
         // =====================================================================
-        // Step 2: Create or Retrieve Session
+        // Step 2: Create or Load Session
         // =====================================================================
         
         console.log('\n🔑 Setting up session...');
         
-        // Check for existing sessions
-        let session;
-        const existingSessions = await sessionManager.getSessions();
+        // Try to load existing session from storage
+        let session = await sessionManager.loadSession();
         
-        if (existingSessions.length > 0) {
-            session = existingSessions[0];
+        if (session) {
             console.log('✅ Using existing session');
-            console.log(`   Expires: ${new Date(session.expiry * 1000).toISOString()}`);
+            console.log(`   Expires: ${new Date(session.expiry).toISOString()}`);
         } else {
             console.log('   Creating new session...');
-            session = await sessionManager.createSession({
-                duration: 3600, // 1 hour
-                maxValue: parseEther('0.1'),
-                requireUV: true,
-            });
+            session = await sessionManager.createSession();
             console.log('✅ New session created');
         }
 
@@ -102,19 +103,23 @@ async function main() {
             console.log(`   → Amount: ${formatEther(amount)} ETH`);
 
             try {
-                const result = await sessionManager.executeWithSession(
-                    {
-                        targetChain: chainConfig.wormholeChainId,
-                        token: 'native',
-                        recipient,
-                        amount,
-                    },
-                    session,
-                    signer
-                );
+                // Sign the action with the session key (instant, no biometric)
+                const actionPayload = await sdk.buildTransferPayload({
+                    targetChain: chainConfig.wormholeChainId,
+                    token: 'native',
+                    recipient,
+                    amount,
+                });
+                const signed = await sessionManager.signAction({
+                    action: 'transfer',
+                    targetChain: chainConfig.wormholeChainId,
+                    payload: getBytes(actionPayload),
+                    nonce: Number(await sdk.getNonce()),
+                    value: amount,
+                });
 
-                console.log(`   ✅ Success: ${result.transactionHash.slice(0, 20)}...`);
-                results.push({ success: true, hash: result.transactionHash });
+                console.log(`   ✅ Signed: ${signed.signature.sessionKeyHash.slice(0, 20)}...`);
+                results.push({ success: true, hash: signed.signature.sessionKeyHash });
             } catch (error: any) {
                 console.log(`   ❌ Failed: ${error.message}`);
                 results.push({ success: false, error: error.message });
@@ -182,46 +187,57 @@ async function executeParallelBatch() {
     const signer = new Wallet(PRIVATE_KEY, provider);
 
     try {
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-        const sessionManager = new SessionManager({
-            hubClient,
-            passkeyManager: sdk.passkey,
-        });
+        const credential = sdk.getCredential();
+        if (!credential) {
+            console.log('   ⚠️  No credential set. Run 01-create-wallet.ts first.');
+            return;
+        }
 
-        const sessions = await sessionManager.getSessions();
-        if (sessions.length === 0) {
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
+        const sessionManager = new SessionManager(
+            credential,
+            hubClient,
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 3600, maxValue: parseEther('0.1') },
+        );
+
+        const session = await sessionManager.loadSession();
+        if (!session) {
             console.log('   ⚠️  No active sessions. Run 01-create-session.ts first.');
             return;
         }
 
-        const session = sessions[0];
         const chainConfig = sdk.getChainConfig();
 
-        console.log('\n📦 Executing transactions in parallel...\n');
+        console.log('\n📦 Signing transactions in parallel...\n');
 
-        const promises = RECIPIENTS.map((recipient, i) => {
-            return sessionManager.executeWithSession(
-                {
+        const promises = RECIPIENTS.map(async (recipient, i) => {
+            try {
+                const actionPayload = await sdk.buildTransferPayload({
                     targetChain: chainConfig.wormholeChainId,
                     token: 'native',
                     recipient,
                     amount: parseEther('0.0001'),
-                },
-                session,
-                signer
-            ).then(result => {
-                console.log(`   ✅ Transaction ${i + 1} complete`);
-                return { success: true, hash: result.transactionHash };
-            }).catch(error => {
+                });
+                const signed = await sessionManager.signAction({
+                    action: 'transfer',
+                    targetChain: chainConfig.wormholeChainId,
+                    payload: getBytes(actionPayload),
+                    nonce: Number(await sdk.getNonce()),
+                    value: parseEther('0.0001'),
+                });
+                console.log(`   ✅ Transaction ${i + 1} signed`);
+                return { success: true, hash: signed.signature.sessionKeyHash };
+            } catch (error: any) {
                 console.log(`   ❌ Transaction ${i + 1} failed`);
                 return { success: false, error: error.message };
-            });
+            }
         });
 
         const results = await Promise.all(promises);
 
         const successful = results.filter(r => r.success).length;
-        console.log(`\n✅ Completed ${successful}/${results.length} transactions in parallel`);
+        console.log(`\n✅ Signed ${successful}/${results.length} transactions in parallel`);
 
     } catch (error) {
         console.log('   ⚠️  Skipped (no credential or session)');

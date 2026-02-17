@@ -91,7 +91,7 @@ async function main() {
                 targetChain: chainConfig.wormholeChainId,
             },
             (status) => {
-                console.log(`   Status: ${status.state}`);
+                console.log(`   Status: ${status.status}`);
                 if (status.hash) {
                     console.log(`   TX Hash: ${status.hash}`);
                 }
@@ -162,7 +162,7 @@ async function createGaslessVault() {
         const result = await sdk.createVaultSponsored();
 
         console.log('✅ Vault created (gasless)!');
-        console.log(`   Address: ${result.vaultAddress}`);
+        console.log(`   Address: ${result.address}`);
         console.log(`   TX Hash: ${result.transactionHash}`);
         console.log(`   Gas Paid By: Sponsor ⚡`);
     } catch (error) {
@@ -194,14 +194,13 @@ async function deployGaslessMultiChain() {
         const result = await sdk.createSponsoredVaultsOnAllChains();
 
         console.log('\n✅ Multi-chain deployment complete!');
-        console.log(`   Total chains: ${result.totalChains}`);
-        console.log(`   Successful: ${result.successfulDeployments}`);
-        console.log(`   Failed: ${result.failedDeployments}`);
+        console.log(`   All successful: ${result.allSuccessful}`);
+        console.log(`   Total results: ${result.results.length}`);
         
         console.log('\n📋 Deployment results:');
-        for (const [chainId, deployment] of Object.entries(result.deployments)) {
+        for (const deployment of result.results) {
             const status = deployment.success ? '✅' : '❌';
-            console.log(`   ${status} Chain ${chainId}: ${deployment.vaultAddress || deployment.error}`);
+            console.log(`   ${status} ${deployment.chain} (${deployment.wormholeChainId}): ${deployment.vaultAddress || deployment.error}`);
         }
     } catch (error) {
         if (error instanceof Error) {
@@ -244,8 +243,8 @@ async function gaslessBridge() {
         );
 
         console.log('\n✅ Gasless bridge complete!');
-        console.log(`   Source TX: ${result.sourceTxHash}`);
-        console.log(`   Destination TX: ${result.destinationTxHash}`);
+        console.log(`   Source TX: ${result.transactionHash}`);
+        console.log(`   Destination TX: ${result.destinationTxHash ?? 'pending'}`);
         console.log(`   Gas Paid By: Relayer ⚡`);
     } catch (error) {
         if (error instanceof Error) {

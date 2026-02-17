@@ -8,7 +8,9 @@
  */
 
 import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-import { parseEther, formatEther } from 'ethers';
+import { parseEther, formatEther, Wallet, JsonRpcProvider } from 'ethers';
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 async function main() {
     console.log('🔑 Create Session Key Example\n');
@@ -32,35 +34,42 @@ async function main() {
         
         console.log('\n🔧 Setting up session manager...');
         
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-        const sessionManager = new SessionManager({
+        const credential = sdk.getCredential();
+        if (!credential) {
+            throw new Error('No credential set. Run 01-create-wallet.ts first.');
+        }
+
+        const provider = new JsonRpcProvider('https://sepolia.base.org');
+        const signer = new Wallet(PRIVATE_KEY, provider);
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer);
+        const sessionManager = new SessionManager(
+            credential,
             hubClient,
-            passkeyManager: sdk.passkey,
-        });
+            (challenge) => sdk.passkey.sign(challenge),
+            {
+                duration: 3600, // 1 hour
+                maxValue: parseEther('0.1'), // Max 0.1 ETH per transaction
+            },
+        );
 
         console.log('✅ Session manager ready');
 
         // =====================================================================
-        // Step 3: Create Session with Custom Parameters
+        // Step 3: Create Session (triggers passkey auth)
         // =====================================================================
         
         console.log('\n🔐 Creating session key...');
         console.log('   (This will trigger passkey authentication)');
 
-        const session = await sessionManager.createSession({
-            duration: 3600, // 1 hour
-            maxValue: parseEther('0.1'), // Max 0.1 ETH per transaction
-            requireUV: true, // Require user verification
-        });
+        const session = await sessionManager.createSession();
 
         console.log('\n✅ Session created successfully!');
         console.log('\n📋 Session Details:');
-        console.log(`   Session Key Hash: ${session.sessionKeyHash}`);
+        console.log(`   Session Key Hash: ${session.keyHash}`);
         console.log(`   Created: ${new Date().toISOString()}`);
-        console.log(`   Expires: ${new Date(session.expiry * 1000).toISOString()}`);
-        console.log(`   Duration: ${Math.floor((session.expiry - Date.now() / 1000) / 60)} minutes`);
+        console.log(`   Expires: ${new Date(session.expiry).toISOString()}`);
+        console.log(`   Time Remaining: ${sessionManager.getTimeRemaining()} seconds`);
         console.log(`   Max Value: ${formatEther(session.maxValue)} ETH`);
-        console.log(`   Active: ${session.active ? 'Yes ✅' : 'No ❌'}`);
 
         // =====================================================================
         // Step 4: Verify Session is Active
@@ -68,7 +77,7 @@ async function main() {
         
         console.log('\n🔍 Verifying session status...');
         
-        const isActive = await sessionManager.isSessionActive(session);
+        const isActive = sessionManager.isActive();
         console.log(`   Session is ${isActive ? 'active ✅' : 'inactive ❌'}`);
 
         // =====================================================================
@@ -77,11 +86,11 @@ async function main() {
         
         console.log('\n💾 Session storage:');
         console.log('   Session keys are automatically stored in browser storage');
-        console.log('   You can retrieve them later with sessionManager.getSessions()');
+        console.log('   You can retrieve them later with sessionManager.loadSession()');
 
-        // Get all active sessions
-        const sessions = await sessionManager.getSessions();
-        console.log(`   Total active sessions: ${sessions.length}`);
+        // Get current session
+        const currentSession = sessionManager.getSession();
+        console.log(`   Current session: ${currentSession ? 'active' : 'none'}`);
 
         // =====================================================================
         // Step 6: Display Usage Instructions
@@ -125,22 +134,27 @@ async function createMultipleSessions() {
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
-    const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-    const sessionManager = new SessionManager({
-        hubClient,
-        passkeyManager: sdk.passkey,
-    });
+    const credential = sdk.getCredential();
+    if (!credential) {
+        console.log('   ⚠️  No credential set. Run 01-create-wallet.ts first.');
+        return;
+    }
+
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
+    const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
 
     console.log('\n📝 Creating sessions with different limits...\n');
 
     // Gaming session - short duration, low value
     console.log('1. Gaming Session:');
     try {
-        const gamingSession = await sessionManager.createSession({
-            duration: 1800, // 30 minutes
-            maxValue: parseEther('0.01'), // 0.01 ETH max
-            requireUV: false, // Faster, less secure
-        });
+        const gamingManager = new SessionManager(
+            credential, hubClient,
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 1800, maxValue: parseEther('0.01') },
+        );
+        await gamingManager.createSession();
         console.log(`   ✅ Created (expires in 30 min, max 0.01 ETH)`);
     } catch (e: any) {
         console.log(`   ⚠️  ${e.message}`);
@@ -149,11 +163,12 @@ async function createMultipleSessions() {
     // Trading session - medium duration, higher value
     console.log('\n2. Trading Session:');
     try {
-        const tradingSession = await sessionManager.createSession({
-            duration: 7200, // 2 hours
-            maxValue: parseEther('1.0'), // 1 ETH max
-            requireUV: true, // More secure
-        });
+        const tradingManager = new SessionManager(
+            credential, hubClient,
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 7200, maxValue: parseEther('1.0') },
+        );
+        await tradingManager.createSession();
         console.log(`   ✅ Created (expires in 2 hours, max 1 ETH)`);
     } catch (e: any) {
         console.log(`   ⚠️  ${e.message}`);
@@ -162,11 +177,12 @@ async function createMultipleSessions() {
     // Micro-transactions session - long duration, very low value
     console.log('\n3. Micro-transactions Session:');
     try {
-        const microSession = await sessionManager.createSession({
-            duration: 86400, // 24 hours
-            maxValue: parseEther('0.001'), // 0.001 ETH max
-            requireUV: false,
-        });
+        const microManager = new SessionManager(
+            credential, hubClient,
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 86400, maxValue: parseEther('0.001') },
+        );
+        await microManager.createSession();
         console.log(`   ✅ Created (expires in 24 hours, max 0.001 ETH)`);
     } catch (e: any) {
         console.log(`   ⚠️  ${e.message}`);

@@ -10,7 +10,7 @@
  * - Gasless DeFi operations via session keys
  */
 
-import { createSDK, createSessionSDK } from '@veridex/sdk';
+import { createSDK, type ChainName } from '@veridex/sdk';
 import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 
@@ -42,12 +42,12 @@ interface Strategy {
 
 class DeFiVaultManager {
     private sdk: ReturnType<typeof createSDK>;
-    private sessionSdk: ReturnType<typeof createSessionSDK> | null = null;
+    private sessionActive: boolean = false;
     private positions: Map<string, Position> = new Map();
     private availableVaults: YieldVault[] = [];
-    private chain: string;
+    private chain: ChainName;
 
-    constructor(chain: string) {
+    constructor(chain: ChainName) {
         this.chain = chain;
         this.sdk = createSDK(chain);
         this.initializeVaults();
@@ -340,7 +340,7 @@ async function main() {
     console.log('BALANCE Veridex DeFi Yield Vault Integration\n');
     console.log('='.repeat(50));
 
-    const defi = new DeFiVaultManager('base-sepolia');
+    const defi = new DeFiVaultManager('base');
 
     // =========================================================================
     // Step 1: View available yield vaults

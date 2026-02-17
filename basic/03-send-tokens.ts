@@ -84,11 +84,11 @@ async function main() {
         
         console.log('\n📊 Transaction Summary:');
         const summary = await sdk.getTransactionSummary(prepared);
-        console.log(`   Action: ${summary.action.type}`);
-        console.log(`   From: ${summary.action.from}`);
-        console.log(`   To: ${summary.action.to}`);
-        console.log(`   Amount: ${summary.action.amount}`);
-        console.log(`   Risk Level: ${summary.riskLevel}`);
+        console.log(`   Action: ${summary.action}`);
+        console.log(`   Title: ${summary.title}`);
+        console.log(`   Description: ${summary.description}`);
+        console.log(`   Fee: ${summary.fee.total}`);
+        console.log(`   Warnings: ${summary.warnings.length}`);
 
         // =====================================================================
         // Step 5: Execute Transfer (with passkey signature)
@@ -244,20 +244,23 @@ async function checkSpendingLimits() {
         console.log(`   Allowed: ${limitCheck.allowed ? '✅ Yes' : '❌ No'}`);
         
         if (!limitCheck.allowed) {
-            console.log(`   Reason: ${limitCheck.violations.join(', ')}`);
-            console.log('\n💡 Suggestions:');
-            for (const suggestion of limitCheck.suggestions) {
-                console.log(`   • ${suggestion.message}`);
+            console.log(`   Reason: ${limitCheck.reason ?? 'unknown'}`);
+            console.log(`   Message: ${limitCheck.message}`);
+            if (limitCheck.suggestions) {
+                console.log('\n💡 Suggestions:');
+                for (const suggestion of limitCheck.suggestions) {
+                    console.log(`   • ${suggestion.label}`);
+                }
             }
         }
 
         // Get current limits
         const limits = await sdk.getFormattedSpendingLimits();
         console.log('\n📋 Current Limits:');
-        console.log(`   Daily Limit: ${limits.dailyLimit.formatted}`);
-        console.log(`   Daily Spent: ${limits.dailySpent.formatted}`);
-        console.log(`   Daily Remaining: ${limits.dailyRemaining.formatted}`);
-        console.log(`   Transaction Limit: ${limits.transactionLimit.formatted}`);
+        console.log(`   Daily Limit: ${limits.dailyLimit}`);
+        console.log(`   Daily Spent: ${limits.dailySpent}`);
+        console.log(`   Daily Remaining: ${limits.dailyRemaining}`);
+        console.log(`   Transaction Limit: ${limits.transactionLimit}`);
     } catch (error) {
         console.log('   ⚠️  Skipped (no credential registered)');
     }

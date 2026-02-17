@@ -8,7 +8,9 @@
  */
 
 import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-import { parseEther, formatEther } from 'ethers';
+import { parseEther, formatEther, Wallet, JsonRpcProvider, getBytes } from 'ethers';
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 async function main() {
     console.log('🚫 Revoke Session Key Example\n');
@@ -26,52 +28,53 @@ async function main() {
         const vaultAddress = sdk.getVaultAddress();
         console.log(`📍 Vault address: ${vaultAddress}`);
 
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-        const sessionManager = new SessionManager({
+        const credential = sdk.getCredential();
+        if (!credential) {
+            throw new Error('No credential set. Run 01-create-wallet.ts first.');
+        }
+
+        const provider = new JsonRpcProvider('https://sepolia.base.org');
+        const signer = new Wallet(PRIVATE_KEY, provider);
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
+        const sessionManager = new SessionManager(
+            credential,
             hubClient,
-            passkeyManager: sdk.passkey,
-        });
+            (challenge) => sdk.passkey.sign(challenge),
+            { duration: 3600, maxValue: parseEther('0.1') },
+        );
 
         // =====================================================================
-        // Step 2: List Active Sessions
+        // Step 2: Check Active Session
         // =====================================================================
         
-        console.log('\n📋 Listing active sessions...');
+        console.log('\n📋 Checking for active session...');
         
-        const sessions = await sessionManager.getSessions();
+        const session = await sessionManager.loadSession();
         
-        if (sessions.length === 0) {
-            console.log('   No active sessions found.');
+        if (!session) {
+            console.log('   No active session found.');
             console.log('\n💡 Run sessions/01-create-session.ts first to create a session.');
             return;
         }
 
-        console.log(`\n   Found ${sessions.length} active session(s):\n`);
+        const timeRemaining = sessionManager.getTimeRemaining();
+        const minutesRemaining = Math.floor(timeRemaining / 60);
         
-        for (let i = 0; i < sessions.length; i++) {
-            const session = sessions[i];
-            const timeRemaining = Math.max(0, session.expiry - Math.floor(Date.now() / 1000));
-            const minutesRemaining = Math.floor(timeRemaining / 60);
-            
-            console.log(`   ${i + 1}. Session ${session.sessionKeyHash.slice(0, 10)}...`);
-            console.log(`      Expires: ${new Date(session.expiry * 1000).toISOString()}`);
-            console.log(`      Time Remaining: ${minutesRemaining} minutes`);
-            console.log(`      Max Value: ${formatEther(session.maxValue)} ETH`);
-            console.log(`      Active: ${session.active ? 'Yes ✅' : 'No ❌'}`);
-            console.log('');
-        }
+        console.log(`\n   Session ${session.keyHash.slice(0, 10)}...`);
+        console.log(`      Expires: ${new Date(session.expiry).toISOString()}`);
+        console.log(`      Time Remaining: ${minutesRemaining} minutes`);
+        console.log(`      Max Value: ${formatEther(session.maxValue)} ETH`);
+        console.log(`      Active: ${sessionManager.isActive() ? 'Yes ✅' : 'No ❌'}`);
 
         // =====================================================================
-        // Step 3: Revoke First Session
+        // Step 3: Revoke Session
         // =====================================================================
         
-        const sessionToRevoke = sessions[0];
-        
-        console.log('🚫 Revoking session...');
-        console.log(`   Session: ${sessionToRevoke.sessionKeyHash.slice(0, 20)}...`);
+        console.log('\n🚫 Revoking session...');
+        console.log(`   Session: ${session.keyHash.slice(0, 20)}...`);
         console.log('   (This requires passkey authentication)\n');
 
-        await sessionManager.revokeSession(sessionToRevoke);
+        await sessionManager.revokeSession();
 
         console.log('✅ Session revoked successfully!');
 
@@ -81,7 +84,7 @@ async function main() {
         
         console.log('\n🔍 Verifying revocation...');
         
-        const isStillActive = await sessionManager.isSessionActive(sessionToRevoke);
+        const isStillActive = sessionManager.isActive();
         console.log(`   Session is ${isStillActive ? 'still active ❌' : 'revoked ✅'}`);
 
         // =====================================================================
@@ -89,37 +92,36 @@ async function main() {
         // =====================================================================
         
         console.log('\n🧪 Testing revoked session...');
-        console.log('   Attempting to execute transaction with revoked session...');
+        console.log('   Attempting to sign with revoked session...');
 
         try {
             const chainConfig = sdk.getChainConfig();
-            await sessionManager.executeWithSession(
-                {
-                    targetChain: chainConfig.wormholeChainId,
-                    token: 'native',
-                    recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
-                    amount: parseEther('0.0001'),
-                },
-                sessionToRevoke,
-                null as any // No signer needed for this test
-            );
+            const actionPayload = await sdk.buildTransferPayload({
+                targetChain: chainConfig.wormholeChainId,
+                token: 'native',
+                recipient: '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7',
+                amount: parseEther('0.0001'),
+            });
+            await sessionManager.signAction({
+                action: 'transfer',
+                targetChain: chainConfig.wormholeChainId,
+                payload: getBytes(actionPayload),
+                nonce: Number(await sdk.getNonce()),
+                value: parseEther('0.0001'),
+            });
             console.log('   ❌ Transaction should have been rejected!');
         } catch (error: any) {
             console.log(`   ✅ Transaction correctly rejected: ${error.message}`);
         }
 
         // =====================================================================
-        // Step 6: List Remaining Sessions
+        // Step 6: Verify No Active Session
         // =====================================================================
         
-        console.log('\n📋 Remaining active sessions:');
+        console.log('\n📋 Session status after revocation:');
         
-        const remainingSessions = await sessionManager.getSessions();
-        console.log(`   Count: ${remainingSessions.length}`);
-
-        if (remainingSessions.length > 0) {
-            console.log('\n💡 Tip: Revoke all sessions when done for maximum security.');
-        }
+        const currentSession = sessionManager.getSession();
+        console.log(`   Active session: ${currentSession ? 'yes' : 'none ✅'}`);
 
     } catch (error) {
         if (error instanceof Error) {
@@ -144,37 +146,43 @@ async function revokeAllSessions() {
     console.log('='.repeat(50));
 
     const sdk = createSDK('base');
-    const hubClient = new EVMHubClientAdapter(sdk.getChainClient());
-    const sessionManager = new SessionManager({
+    const credential = sdk.getCredential();
+    if (!credential) {
+        console.log('   ⚠️  No credential set.');
+        return;
+    }
+
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
+    const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
+    const sessionManager = new SessionManager(
+        credential,
         hubClient,
-        passkeyManager: sdk.passkey,
-    });
+        (challenge) => sdk.passkey.sign(challenge),
+        { duration: 3600, maxValue: parseEther('0.1') },
+    );
 
     try {
-        console.log('\n📋 Finding all active sessions...');
+        console.log('\n📋 Checking for active session...');
         
-        const sessions = await sessionManager.getSessions();
+        const session = await sessionManager.loadSession();
         
-        if (sessions.length === 0) {
-            console.log('   No active sessions to revoke.');
+        if (!session) {
+            console.log('   No active session to revoke.');
             return;
         }
 
-        console.log(`   Found ${sessions.length} session(s) to revoke\n`);
+        console.log(`   Found session: ${session.keyHash.slice(0, 10)}...`);
+        console.log('   Revoking...');
 
-        for (let i = 0; i < sessions.length; i++) {
-            const session = sessions[i];
-            console.log(`   Revoking session ${i + 1}/${sessions.length}...`);
-            
-            try {
-                await sessionManager.revokeSession(session);
-                console.log(`   ✅ Revoked ${session.sessionKeyHash.slice(0, 10)}...`);
-            } catch (error: any) {
-                console.log(`   ❌ Failed: ${error.message}`);
-            }
+        try {
+            await sessionManager.revokeSession();
+            console.log(`   ✅ Revoked ${session.keyHash.slice(0, 10)}...`);
+        } catch (error: any) {
+            console.log(`   ❌ Failed: ${error.message}`);
         }
 
-        console.log('\n✅ All sessions revoked!');
+        console.log('\n✅ Session revoked!');
 
     } catch (error) {
         console.log('   ⚠️  Skipped (no credential registered)');
