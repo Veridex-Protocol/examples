@@ -1,0 +1,138 @@
+// Veridex Multisig Wallet — Prisma Schema
+// Docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+// ============================================================================
+// Wallet — a multisig wallet with M-of-N threshold
+// ============================================================================
+model Wallet {
+  id           String   @id
+  name         String
+  threshold    Int
+  vaultAddress String?  @map("vault_address")
+  createdAt    Int      @map("created_at")
+  createdBy    String   @map("created_by")
+
+  signers       Signer[]
+  invites       Invite[]
+  proposals     Proposal[]
+  notifications Notification[]
+
+  @@map("wallets")
+}
+
+// ============================================================================
+// Signer — a passkey-authenticated signer on a wallet
+// ============================================================================
+model Signer {
+  id       Int     @id @default(autoincrement())
+  walletId String  @map("wallet_id")
+  keyHash  String  @map("key_hash")
+  name     String
+  isOwner  Boolean @default(false) @map("is_owner")
+  status   String  @default("pending") // active | invited | pending
+  addedAt  Int     @map("added_at")
+  joinedAt Int?    @map("joined_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@unique([walletId, keyHash])
+  @@index([walletId])
+  @@index([keyHash])
+  @@map("signers")
+}
+
+// ============================================================================
+// Invite — a time-limited invite link for a signer to join a wallet
+// ============================================================================
+model Invite {
+  id         String  @id
+  walletId   String  @map("wallet_id")
+  signerName String  @map("signer_name")
+  createdAt  Int     @map("created_at")
+  expiresAt  Int     @map("expires_at")
+  usedBy     String? @map("used_by")
+  usedAt     Int?    @map("used_at")
+
+  wallet Wallet @relation(fields: [walletId], references: [id], onDelete: Cascade)
+
+  @@index([walletId])
+  @@map("invites")
+}
+
+// ============================================================================
+// Proposal — a transaction proposal (transfer, contract call, or deploy)
+// ============================================================================
+model Proposal {
+  id                String  @id
+  walletId          String  @map("wallet_id")
+  title             String
+  description       String  @default("")
+  proposalType      String  @default("transfer") @map("proposal_type") // transfer | execute | deploy
+  targetChain       Int     @map("target_chain")
+  token             String  @default("native")
+  recipient         String
+  amount            String  @default("0")
+  calldata          String? // hex-encoded calldata for execute/deploy
+  status            String  @default("pending") // pending | approved | rejected | executed | expired
+  requiredApprovals Int     @map("required_approvals")
+  createdAt         Int     @map("created_at")
+  createdBy         String  @map("created_by")
+  executedAt        Int?    @map("executed_at")
+  executedBy        String? @map("executed_by")
+  txHash            String? @map("tx_hash")
+
+  wallet        Wallet         @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  votes         ProposalVote[]
+  notifications Notification[]
+
+  @@index([walletId])
+  @@map("proposals")
+}
+
+// ============================================================================
+// ProposalVote — a signer's vote on a proposal
+// ============================================================================
+model ProposalVote {
+  id             Int    @id @default(autoincrement())
+  proposalId     String @map("proposal_id")
+  voterKeyHash   String @map("voter_key_hash")
+  vote           String // approve | reject
+  votedAt        Int    @map("voted_at")
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@unique([proposalId, voterKeyHash])
+  @@index([proposalId])
+  @@map("proposal_votes")
+}
+
+// ============================================================================
+// Notification — per-signer notification for multisig events
+// ============================================================================
+model Notification {
+  id               Int     @id @default(autoincrement())
+  recipientKeyHash String  @map("recipient_key_hash")
+  walletId         String  @map("wallet_id")
+  proposalId       String? @map("proposal_id")
+  type             String  // proposal_created | proposal_voted | proposal_approved | proposal_rejected | proposal_executed
+  title            String
+  message          String
+  isRead           Boolean @default(false) @map("is_read")
+  createdAt        Int     @map("created_at")
+
+  wallet   Wallet    @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  proposal Proposal? @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+
+  @@index([recipientKeyHash])
+  @@index([walletId])
+  @@map("notifications")
+}

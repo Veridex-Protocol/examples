@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+.next/
+
+# database
+data/
+
+# env
+.env.local
+.env
+
+# misc
+*.tsbuildinfo
+next-env.d.ts
+
+/lib/generated/prisma
