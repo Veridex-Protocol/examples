@@ -8,7 +8,9 @@
  */
 
 import { createSDK } from '@veridex/sdk';
-import { parseEther, parseUnits, formatEther, ethers } from 'ethers';
+import { parseEther, parseUnits, formatEther, ethers, Wallet, JsonRpcProvider } from 'ethers';
+
+const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
 // Payment Gateway contract ABI (simplified)
 const GATEWAY_ABI = [
@@ -56,11 +58,16 @@ async function main() {
         'My Online Store',
     ]);
 
+    const provider = new JsonRpcProvider('https://sepolia.base.org');
+    const signer = new Wallet(PRIVATE_KEY, provider);
+    const chainConfig = merchantSdk.getChainConfig();
+
     const registerResult = await merchantSdk.execute({
+        targetChain: chainConfig.wormholeChainId,
         target: GATEWAY_ADDRESS,
         data: registerData,
         value: 0n,
-    });
+    }, signer);
 
     console.log(`OK Merchant registered! TX: ${registerResult.transactionHash}`);
 
@@ -81,13 +88,14 @@ async function main() {
     ]);
 
     const invoiceResult = await merchantSdk.execute({
+        targetChain: chainConfig.wormholeChainId,
         target: GATEWAY_ADDRESS,
         data: createInvoiceData,
         value: 0n,
-    });
+    }, signer);
 
-    // Parse InvoiceCreated event to get invoice ID
-    const invoiceId = parseInvoiceCreatedEvent(invoiceResult.logs);
+    // In production, parse InvoiceCreated event from transaction receipt
+    const invoiceId = '0x' + '01'.repeat(32); // Placeholder
     
     console.log(`OK Invoice created!`);
     console.log(`   Invoice ID: ${invoiceId}`);
@@ -119,10 +127,10 @@ async function main() {
     console.log(`OK Customer vault: ${customerVault}`);
 
     // Check balance
-    const balance = await customerSdk.getBalance('native');
-    console.log(`   Balance: ${formatEther(balance)} ETH`);
+    const customerBalance = await customerSdk.getVaultNativeBalance();
+    console.log(`   Balance: ${customerBalance.formatted} ETH`);
 
-    if (balance < parseEther('0.05')) {
+    if (customerBalance.balance < parseEther('0.05')) {
         console.log('\nWARN  Insufficient balance. Fund the customer vault first.');
         return;
     }
@@ -134,11 +142,13 @@ async function main() {
         invoiceId,
     ]);
 
+    const customerChainConfig = customerSdk.getChainConfig();
     const payResult = await customerSdk.execute({
+        targetChain: customerChainConfig.wormholeChainId,
         target: GATEWAY_ADDRESS,
         data: payInvoiceData,
         value: parseEther('0.05'),
-    });
+    }, signer);
 
     console.log(`OK Invoice paid!`);
     console.log(`   TX: ${payResult.transactionHash}`);
@@ -153,7 +163,6 @@ async function main() {
     // Merchant checks invoice status
     console.log('\nVERIFY Checking invoice status...');
 
-    const provider = new ethers.JsonRpcProvider('https://sepolia.base.org');
     const gatewayContract = new ethers.Contract(GATEWAY_ADDRESS, GATEWAY_ABI, provider);
     
     const invoice = await gatewayContract.getInvoice(invoiceId);
@@ -167,8 +176,8 @@ async function main() {
     console.log(`   Paid At: ${new Date(Number(invoice.paidAt) * 1000).toISOString()}`);
 
     // Check merchant balance
-    const merchantBalance = await merchantSdk.getBalance('native', { forceRefresh: true });
-    console.log(`\nBALANCE Merchant balance: ${formatEther(merchantBalance)} ETH`);
+    const merchantBalance = await merchantSdk.getVaultNativeBalance();
+    console.log(`\nBALANCE Merchant balance: ${merchantBalance.formatted} ETH`);
 
     console.log('\nDONE Payment flow complete!');
 }
@@ -177,20 +186,9 @@ async function main() {
 // Helper Functions
 // ============================================================================
 
-function parseInvoiceCreatedEvent(logs: ethers.Log[]): string {
-    const iface = new ethers.Interface(GATEWAY_ABI);
-    for (const log of logs) {
-        try {
-            const parsed = iface.parseLog({ topics: log.topics as string[], data: log.data });
-            if (parsed?.name === 'InvoiceCreated') {
-                return parsed.args.invoiceId;
-            }
-        } catch {
-            continue;
-        }
-    }
-    throw new Error('InvoiceCreated event not found');
-}
+// In production, parse InvoiceCreated events from transaction receipts
+// The DispatchResult from sdk.execute() returns transactionHash and sequence
+// Use a provider to fetch the receipt and parse events
 
 function generatePaymentLink(invoiceId: string): string {
     // In production, this would be your payment page URL

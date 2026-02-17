@@ -8,7 +8,7 @@
  */
 
 import { createSDK } from '@veridex/sdk';
-import { parseVAA, verifyVAASignatures, normalizeEmitterAddress } from '@veridex/sdk';
+import { parseVAA, hasQuorum, normalizeEmitterAddress } from '@veridex/sdk';
 import { Wallet, JsonRpcProvider, parseEther } from 'ethers';
 
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
@@ -105,7 +105,7 @@ async function main() {
             
             console.log('\n🔐 Verifying Guardian signatures...');
             
-            const isValid = verifyVAASignatures(vaa);
+            const isValid = hasQuorum(vaa, true);
             
             if (isValid) {
                 console.log('✅ VAA signatures are valid!');
@@ -121,7 +121,7 @@ async function main() {
             
             console.log('\n🛡️  Verifying emitter address...');
             
-            const hubContract = chainConfig.contracts.hub;
+            const hubContract = chainConfig.contracts?.hub || '';
             const normalizedEmitter = normalizeEmitterAddress(vaa.emitterAddress);
             const normalizedHub = normalizeEmitterAddress(hubContract);
             

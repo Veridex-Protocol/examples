@@ -41,7 +41,7 @@ async function main() {
 
         const provider = new JsonRpcProvider('https://sepolia.base.org');
         const signer = new Wallet(PRIVATE_KEY, provider);
-        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer);
+        const hubClient = new EVMHubClientAdapter(sdk.getChainClient() as any, signer as any);
         const sessionManager = new SessionManager(
             credential,
             hubClient,
