@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import type { Wallet, Signer, Invite, Proposal, ProposalVote, Notification } from '@/lib/generated/prisma';
+import type { Wallet, Signer, Invite, Proposal, ProposalVote, Notification } from '@prisma/client';
 
 // ============================================================================
 // Re-export Prisma types as Db* aliases for backward compatibility
