@@ -1,99 +1,268 @@
 # Veridex Protocol Examples
 
-Production-ready examples demonstrating how to integrate with the Veridex Protocol for cross-chain passkey authentication.
+Production-ready examples demonstrating how to integrate with the Veridex Protocol — from simple passkey wallets to autonomous AI agents with payments.
 
-## Overview
+> **Full Documentation:** [docs.veridex.network](https://docs.veridex.network) · [veridex-documentation.vercel.app](https://veridex-documentation.vercel.app/)
 
-Veridex enables **passwordless, cross-chain authentication** using WebAuthn/Passkeys (P-256/secp256r1). Users get a deterministic vault address across all chains derived from their passkey.
+## Examples at a Glance
 
-> **📚 Full Documentation:** [docs.veridex.network](https://docs.veridex.network) · [veridex-documentation.vercel.app](https://veridex-documentation.vercel.app/)
+| Example | Difficulty | Description | Stack |
+|---------|-----------|-------------|-------|
+| [react-passkey-demo](#react-passkey-demo) | Beginner | Minimal passkey wallet — register, persist, disconnect | React + Vite |
+| [agent-basic](#agent-basic) | Beginner | Passkey wallet + agent provisioning + USDC payments | Next.js 14 |
+| [agent-advanced](#agent-advanced) | Advanced | AI chat (Gemini), MCP tools, ERC-8004 identity, trust gates | Next.js 14 |
+| [demo_play](#demo_play) | Intermediate | Full wallet demo — passkey registration, deterministic addresses, modern UI | Next.js |
+| [multisig-wallet](#multisig-wallet) | Advanced | M-of-N multisig with off-chain (Veridex SDK) and on-chain (Solidity) modes | Next.js + Prisma |
+| [basic/](#basic-scripts) | Beginner | CLI scripts — create wallet, balances, transfers, bridging, gasless | TypeScript (Node) |
+| [sessions/](#session-scripts) | Intermediate | CLI scripts — session key creation, batch execution, revocation | TypeScript (Node) |
+| [advanced/](#advanced-scripts) | Intermediate | CLI scripts — VAA verification, session lifecycle | TypeScript (Node) |
+| [integrations/](#integrations) | Advanced | Patterns — payment gateway, NFT marketplace, DeFi vault, gaming | Various |
+| [contracts/](#contracts) | Advanced | Hardhat project — deploy and test Veridex contracts | Solidity + Hardhat |
+
+---
 
 ## Quick Start
 
 ```bash
-# Install dependencies
-npm install
+# Install all workspace dependencies from the monorepo root
+bun install
 
-# Run basic wallet creation example
-npm run basic:wallet
+# Then cd into any example and run it
+cd examples/react-passkey-demo && bun run dev
 ```
 
-## Examples Structure
+---
 
-```
-examples/
-├── basic/                  # Core SDK usage patterns
-│   ├── 01-create-wallet.ts    # Create passkey wallet
-│   ├── 02-get-balances.ts     # Query multi-chain balances
-│   ├── 03-send-tokens.ts      # Transfer tokens
-│   ├── 04-cross-chain.ts      # Cross-chain bridging
-│   └── 05-gasless.ts          # Gasless transactions via relayer
-│
-├── sessions/               # Session key management
-│   ├── 01-create-session.ts   # Create time-limited session
-│   ├── 02-execute-batch.ts    # Batch transactions with session
-│   └── 03-revoke-session.ts   # Revoke session key
-│
-├── advanced/               # Advanced features
-│   ├── 01-vaa-verify.ts       # VAA verification and security
-│   └── 02-session-lifecycle.ts # Complete session lifecycle
-│
-└── integrations/           # Real-world integration patterns
-    ├── payment-gateway/       # Accept crypto payments
-    ├── nft-marketplace/       # NFT trading with passkeys
-    ├── defi-vault/            # DeFi yield vault integration
-    └── gaming/                # In-game asset management
-```
+## Web Application Examples
 
-## Running Examples
+### react-passkey-demo
 
-**Important Note:** These examples are designed to demonstrate SDK usage patterns. WebAuthn/Passkey functionality requires a browser environment with HTTPS. When running in Node.js:
-- Passkey registration will fail (expected)
-- Examples will show the proper API usage
-- You can see the flow and error handling
-- In production, use these patterns in a browser application
-
-### Basic Examples
+The simplest possible React example — create a passkey wallet and disconnect it.
 
 ```bash
-# Create a passkey wallet
-npm run basic:wallet
-
-# Check balances across chains
-npm run basic:balances
-
-# Send tokens
-npm run basic:send
-
-# Bridge tokens cross-chain
-npm run basic:crosschain
-
-# Execute gasless transactions
-npm run basic:gasless
+cd examples/react-passkey-demo
+bun install
+bun run dev
+# Open http://localhost:5173
 ```
 
-### Session Examples
+**What it demonstrates:**
+- `sdk.passkey.register()` — WebAuthn passkey registration
+- `sdk.passkey.saveToLocalStorage()` / `loadFromLocalStorage()` — credential persistence
+- `sdk.getVaultAddress()` — deterministic vault address derivation
+- `sdk.passkey.authenticate()` — reconnect with discoverable credentials
+
+**Stack:** React 19, Vite 6, `@veridex/sdk`
+
+---
+
+### agent-basic
+
+Minimal Next.js app showing how to use `@veridex/agentic-payments` with a passkey wallet. Best starting point for agent development.
 
 ```bash
-# Create a session key
-npm run session:create
-
-# Execute batch transactions without passkey prompts
-npm run session:execute
-
-# Revoke a session
-npm run session:revoke
+cd examples/agent-basic
+bun install
+bun run dev
+# Open http://localhost:3000
 ```
 
-### Advanced Examples
+**What it demonstrates:**
+1. Create passkey wallet in the browser (`@veridex/sdk`)
+2. Send credential to server → `createAgentWallet()` with session keys and spending limits
+3. Check token balances via `agent.getBalance()`
+4. Send USDC payments via `agent.pay()`
+5. Monitor session status via `agent.getSessionStatus()`
+6. Revoke session via `agent.revokeSession()`
+
+**Architecture:**
+```
+Browser (@veridex/sdk)  →  POST /api/agent  →  Server (@veridex/agentic-payments)
+  passkey.register()                            createAgentWallet()
+  sends credential                              agent.pay() / getBalance()
+```
+
+> **Important:** The `@veridex/agentic-payments` SDK relies on `@veridex/sdk` and requires a **passkey wallet created via a browser frontend**. Passkey operations use WebAuthn APIs and cannot run server-side.
+
+**Stack:** Next.js 14 (App Router), `@veridex/sdk`, `@veridex/agentic-payments`
+
+**Docs:** [Agent Payments Guide](https://docs.veridex.network/guides/agent-payments)
+
+---
+
+### agent-advanced
+
+Production-grade AI agent with Gemini chat, MCP tool integration, ERC-8004 identity/reputation, trust-gated payments, and multi-chain support.
 
 ```bash
-# Verify Wormhole VAAs
-npm run advanced:vaa
+cd examples/agent-advanced
+cp .env.example .env.local
+# Add GOOGLE_API_KEY=your-gemini-key to .env.local
 
-# Complete session lifecycle
-npm run advanced:session
+bun install
+bun run dev
+# Open http://localhost:3001
 ```
+
+**What it demonstrates:**
+1. Everything in `agent-basic`, plus:
+2. **Gemini AI chat** with function calling — the AI can check balances and make payments through natural language
+3. **MCP tools → Gemini function declarations** — `agent.getMCPTools()` mapped to Gemini's `functionDeclarations`
+4. **ERC-8004 identity** (optional) — register on-chain agent identity, check merchant reputation
+5. **Trust-gated payments** — reject merchants below a reputation threshold
+6. **Multi-chain** — Base Sepolia + Ethereum Sepolia
+
+**Key files:**
+
+| File | Purpose |
+|------|---------|
+| `src/app/page.tsx` | Sidebar + chat UI |
+| `src/app/api/agent/route.ts` | Agent provisioning, balance, pay, revoke |
+| `src/app/api/chat/route.ts` | Gemini AI with MCP function calling |
+| `src/lib/agent-wallet.ts` | Singleton AgentWallet factory |
+| `src/lib/gemini-agent.ts` | MCP tools → Gemini function declarations |
+
+**Prerequisites:**
+- [Google Gemini API Key](https://aistudio.google.com/apikey)
+- Testnet USDC from [Circle Faucet](https://faucet.circle.com)
+
+**Stack:** Next.js 14, `@veridex/sdk`, `@veridex/agentic-payments`, `@google/generative-ai`, ethers v6
+
+**Docs:** [Agent Payments Guide](https://docs.veridex.network/guides/agent-payments) · [Agent Identity Guide](https://docs.veridex.network/guides/agent-identity)
+
+---
+
+### demo_play
+
+Full-featured wallet demo with passkey registration, deterministic addresses, and a polished glassmorphism UI.
+
+```bash
+cd examples/demo_play
+bun install
+bun run dev
+```
+
+**What it demonstrates:**
+- Passkey wallet creation with Touch ID / Face ID / security keys
+- Deterministic vault addresses across all EVM chains
+- Client-side only — no backend required
+- Modern glassmorphism UI with animations
+
+**Stack:** Next.js, `@veridex/sdk`
+
+---
+
+### multisig-wallet
+
+Production-grade multisig wallet with two approaches to multi-signer transaction approval.
+
+```bash
+cd examples/multisig-wallet
+bun install
+bun run dev
+```
+
+**What it demonstrates:**
+1. **Off-Chain Multisig (Veridex SDK)** — Gasless, passkey-based multisig using pre-deployed vault contracts with off-chain proposal coordination and relayer execution
+2. **On-Chain Multisig (Smart Contract)** — Fully trustless on-chain multisig using a custom Solidity contract
+
+Both support M-of-N approval thresholds, proposal lifecycle management, and signer administration.
+
+**Stack:** Next.js, Prisma, `@veridex/sdk`, Solidity
+
+---
+
+## CLI Script Examples
+
+> **Note:** These scripts demonstrate SDK usage patterns. WebAuthn/Passkey operations require a browser environment — in Node.js, passkey registration will fail (expected). Use these to understand the API flow.
+
+### Basic Scripts
+
+```bash
+bun run basic:wallet       # Create a passkey wallet
+bun run basic:balances     # Check balances across chains
+bun run basic:send         # Send tokens
+bun run basic:crosschain   # Bridge tokens cross-chain
+bun run basic:gasless      # Execute gasless transactions
+```
+
+### Session Scripts
+
+```bash
+bun run session:create     # Create a session key
+bun run session:execute    # Execute batch transactions without passkey prompts
+bun run session:revoke     # Revoke a session
+```
+
+### Advanced Scripts
+
+```bash
+bun run advanced:vaa       # Verify Wormhole VAAs
+bun run advanced:session   # Complete session lifecycle
+```
+
+---
+
+## Contracts
+
+Hardhat project for deploying and testing Veridex contracts locally.
+
+```bash
+cd examples/contracts
+bun install
+npx hardhat compile
+npx hardhat test
+```
+
+---
+
+## Integrations
+
+Pattern examples for real-world use cases:
+
+| Integration | Description |
+|-------------|-------------|
+| `integrations/payment-gateway/` | Accept crypto payments with passkey wallets |
+| `integrations/nft-marketplace/` | NFT trading with passkey authentication |
+| `integrations/defi-vault/` | DeFi yield vault integration |
+| `integrations/gaming/` | In-game asset management |
+
+---
+
+## Next.js Webpack Configuration
+
+When using `@veridex/sdk` or `@veridex/agentic-payments` in a Next.js project, you need to configure `next.config.mjs` to handle transitive dependency resolution issues:
+
+```js
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  transpilePackages: ['@veridex/sdk', '@veridex/agentic-payments'],
+  webpack: (config, { isServer }) => {
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      fs: false,
+      net: false,
+      tls: false,
+    };
+
+    // Ignore problematic transitive deps from @aptos-labs/ts-sdk
+    // that reference unexported paths in @noble/curves
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@aptos-labs/ts-sdk': false,
+    };
+
+    return config;
+  },
+};
+
+export default nextConfig;
+```
+
+This is required because `@veridex/sdk` includes multi-chain support (Aptos, Sui, etc.) and some transitive dependencies reference module paths that webpack cannot resolve by default.
+
+---
 
 ## Supported Chains
 
@@ -109,85 +278,9 @@ npm run advanced:session
 | Sui | Testnet/Mainnet | ✅ | Spoke |
 | Starknet | Sepolia/Mainnet | ✅ | Spoke |
 
-## Key Concepts
-
-### 1. Vault Address Derivation
-
-Users get the **same address** on all EVM chains, derived from their passkey:
-
-```typescript
-import { createSDK } from '@veridex/sdk';
-
-const sdk = createSDK('base');
-await sdk.passkey.register('user@example.com', 'My Wallet');
-const vaultAddress = sdk.getVaultAddress(); // Same on all EVM chains!
-```
-
-### 2. Gasless Transactions
-
-Users never need to hold gas tokens - relayers pay fees:
-
-```typescript
-const sdk = createSDK('base', { 
-  relayerUrl: 'https://relayer.veridex.network' 
-});
-
-await sdk.transferViaRelayer({
-  token: 'native',
-  recipient: '0x...',
-  amount: parseEther('0.1'),
-  targetChain: 10004,
-}); // No gas needed!
-```
-
-### 3. Session Keys
-
-Create temporary keys for seamless UX without repeated passkey prompts:
-
-```typescript
-import { SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-
-const credential = sdk.getCredential();
-const hubClient = new EVMHubClientAdapter(sdk.getChainClient(), signer);
-const sessionManager = new SessionManager(
-  credential,
-  hubClient,
-  (challenge) => sdk.passkey.sign(challenge),
-  { duration: 3600, maxValue: parseEther('0.1') },
-);
-
-const session = await sessionManager.createSession();
-
-// Sign actions instantly without biometric prompts
-const signed = await sessionManager.signAction(actionParams);
-```
-
-### 4. Cross-Chain Messaging
-
-Transfer assets and execute actions across chains:
-
-```typescript
-await sdk.bridge({
-  sourceChain: 10004, // Base Sepolia
-  token: USDC_ADDRESS,
-  amount: parseUnits('100', 6),
-  destinationChain: 10005, // Optimism Sepolia
-  recipient: vaultAddress,
-});
-```
-
-## Security Model
-
-- **Passkey-Only**: No seed phrases, no private keys to lose
-- **Deterministic Vaults**: Same address derived from passkey across chains
-- **RIP-7212 Support**: ~95x cheaper signature verification on supported chains
-- **Wormhole VAA**: Cross-chain messages secured by Guardian network (13/19 quorum)
-- **Replay Protection**: Nonce-based action deduplication
-- **Session Bounds**: Time-limited with value caps for delegated access
-
 ## Environment Setup
 
-Create a `.env` file:
+Create a `.env` file (see `.env.example`):
 
 ```env
 # Optional: Custom RPC URLs
@@ -201,113 +294,13 @@ RELAYER_API_KEY=your-api-key
 # For examples that require gas payment
 PRIVATE_KEY=your_deployer_key_here
 
-# Optional: Sponsor key for gasless vault creation
-SPONSOR_PRIVATE_KEY=your_sponsor_key_here
-```
-
-## API Reference
-
-### Core SDK
-
-```typescript
-import { createSDK } from '@veridex/sdk';
-
-// Create SDK instance
-const sdk = createSDK('base', {
-  network: 'testnet', // or 'mainnet'
-  rpcUrl: 'https://custom-rpc.example.com', // optional
-  relayerUrl: 'https://relayer.veridex.network', // optional
-  relayerApiKey: 'your-api-key', // optional
-});
-
-// Register passkey
-const credential = await sdk.passkey.register('user@example.com', 'My Wallet');
-
-// Get vault address
-const vaultAddress = sdk.getVaultAddress();
-
-// Check balance
-const balance = await sdk.getVaultNativeBalance();
-
-// Transfer tokens
-const prepared = await sdk.prepareTransfer({
-  token: 'native',
-  recipient: '0x...',
-  amount: parseEther('0.1'),
-  targetChain: 10004,
-});
-const result = await sdk.executeTransfer(prepared, signer);
-
-// Bridge cross-chain
-const bridgePrepared = await sdk.prepareBridge({
-  sourceChain: 10004,
-  token: 'native',
-  amount: parseEther('0.1'),
-  destinationChain: 10005,
-  recipient: vaultAddress,
-});
-const bridgeResult = await sdk.executeBridge(bridgePrepared, signer);
-```
-
-### Session Manager
-
-```typescript
-import { SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
-
-const credential = sdk.getCredential();
-const hubClient = new EVMHubClientAdapter(sdk.getChainClient(), signer);
-const sessionManager = new SessionManager(
-  credential,
-  hubClient,
-  (challenge) => sdk.passkey.sign(challenge),
-  { duration: 3600, maxValue: parseEther('0.1') },
-);
-
-// Create session (triggers one passkey auth)
-const session = await sessionManager.createSession();
-
-// Sign actions instantly (no biometric)
-const signed = await sessionManager.signAction({
-  action: 'transfer',
-  targetChain: 10004,
-  payload: getBytes(actionPayload),
-  nonce: Number(await sdk.getNonce()),
-  value: parseEther('0.01'),
-});
-
-// Check session status
-const isActive = sessionManager.isActive();
-const timeLeft = sessionManager.getTimeRemaining();
-
-// Revoke session
-await sessionManager.revokeSession();
-```
-
-### Utilities
-
-```typescript
-import { 
-  parseVAA,
-  verifyVAASignatures,
-  normalizeEmitterAddress,
-  getSupportedChains,
-  getHubChains,
-} from '@veridex/sdk';
-
-// Parse VAA
-const vaa = parseVAA(vaaBytes);
-
-// Verify signatures
-const isValid = verifyVAASignatures(vaa);
-
-// Get supported chains
-const chains = getSupportedChains();
-const hubs = getHubChains();
+# For agent-advanced: Gemini AI
+GOOGLE_API_KEY=your-gemini-api-key
 ```
 
 ## Browser Support
 
-WebAuthn requires a secure context (HTTPS) and a compatible browser:
+WebAuthn requires a secure context (HTTPS or localhost):
 
 | Browser | Minimum Version |
 |---------|-----------------|
@@ -316,78 +309,17 @@ WebAuthn requires a secure context (HTTPS) and a compatible browser:
 | Safari | 14+ |
 | Edge | 18+ |
 
-## TypeScript
-
-Full TypeScript support with comprehensive type definitions:
-
-```typescript
-import type {
-  ChainName,
-  NetworkType,
-  SimpleSDKConfig,
-  TransferParams,
-  BridgeParams,
-  SessionKey,
-  SessionConfig,
-  PreparedTransfer,
-  TransferResult,
-} from '@veridex/sdk';
-```
-
-## Common Patterns
-
-### Check if Vault Exists
-
-```typescript
-const exists = await sdk.vaultExists();
-if (!exists) {
-  await sdk.createVault(signer);
-}
-```
-
-### Multi-Chain Balance Check
-
-```typescript
-const balances = await sdk.getMultiChainBalances([10004, 10005, 10003]);
-for (const chainBalance of balances) {
-  console.log(`${chainBalance.chainName}: ${chainBalance.tokens[0].formatted}`);
-}
-```
-
-### Transaction with Progress Tracking
-
-```typescript
-const result = await sdk.executeTransfer(prepared, signer);
-const state = await sdk.waitForTransaction(result.transactionHash);
-console.log(`Confirmed in block ${state.blockNumber}`);
-```
-
-### Spending Limits Check
-
-```typescript
-const limitCheck = await sdk.checkSpendingLimit(parseEther('0.5'));
-if (!limitCheck.allowed) {
-  console.log('Transaction exceeds spending limits');
-  console.log('Suggestions:', limitCheck.suggestions);
-}
-```
-
 ## Troubleshooting
 
-### "No credential set"
-Run `01-create-wallet.ts` first to register a passkey.
-
-### "Insufficient balance"
-Fund your vault with testnet tokens from a faucet.
-
-### "WebAuthn not supported"
-Ensure you're running in a secure context (HTTPS) with a compatible browser.
-
-### "VAA not found"
-VAAs take 15-30 seconds to finalize. Wait and retry.
-
-### "Session expired"
-Create a new session or refresh the existing one.
+| Error | Solution |
+|-------|----------|
+| "No credential set" | Run passkey registration first |
+| "Insufficient balance" | Fund your vault/session wallet with testnet tokens from a faucet |
+| "WebAuthn not supported" | Use HTTPS or localhost in a compatible browser |
+| "VAA not found" | VAAs take 15–30 seconds to finalize — wait and retry |
+| "Session expired" | Create a new session or re-provision the agent |
+| `@noble/curves` module error | Add the [Next.js webpack config](#nextjs-webpack-configuration) to your `next.config.mjs` |
+| "Agent not provisioned" | Create a passkey wallet in the browser first, then provision the agent |
 
 ## License
 
@@ -396,6 +328,6 @@ MIT
 ## Links
 
 - [Official Documentation](https://docs.veridex.network) · [Mirror](https://veridex-documentation.vercel.app/)
-- [SDK Repository](https://github.com/Veridex-Protocol/sdk)
+- [SDK Repository](https://github.com/Veridex-Protocol/veridex-typescript-sdk)
 - [Discord](https://discord.gg/veridex)
 - [Twitter](https://twitter.com/VeridexProtocol)
