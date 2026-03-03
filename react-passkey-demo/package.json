@@ -9,7 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@veridex/sdk": "^1.0.0-beta.20",
+    "@veridex/sdk": "^1.0.0-beta.22",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },
