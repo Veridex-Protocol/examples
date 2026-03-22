@@ -15,11 +15,11 @@ export const config = {
     chainId: 84532,
     wormholeChainId: 10004,
     rpcUrl: RPC_URLS.baseSepolia,
-    hubContract: '0x66D87dE68327f48A099c5B9bE97020Feab9a7c82',
+    hubContract: '0x23a39c294891703146c3607e1FEEB5Fe78F7F28d',
     wormholeCoreBridge: '0x79A1027a6A159502049F10906D333EC57E95F083',
     chainName: 'Base Sepolia',
     explorerUrl: 'https://sepolia.basescan.org',
-    vaultFactory: '0xCFaEb5652aa2Ee60b2229dC8895B4159749C7e53',
+    vaultFactory: '0x31e8dc9428575334739754Ab2bdB0E8b9Dc707FD',
     vaultImplementation: '0x0d13367C16c6f0B24eD275CC67C7D9f42878285c',
     relayerUrl,
 };
