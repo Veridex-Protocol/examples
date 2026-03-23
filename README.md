@@ -10,7 +10,7 @@ Production-ready examples demonstrating how to integrate with the Veridex Protoc
 |---------|-----------|-------------|-------|
 | [react-passkey-demo](#react-passkey-demo) | Beginner | Minimal passkey wallet — register, persist, disconnect | React + Vite |
 | [agent-basic](#agent-basic) | Beginner | Passkey wallet + agent provisioning + USDC payments | Next.js 14 |
-| [agent-advanced](#agent-advanced) | Advanced | AI chat (Gemini), MCP tools, ERC-8004 identity, trust gates | Next.js 14 |
+| [agent-advanced](#agent-advanced) | Advanced | AI chat (Gemini), MCP tools, ERC-8004 identity, trust gates, policy engine, security firewall, 5 payment protocols | Next.js 14 |
 | [demo_play](#demo_play) | Intermediate | Full wallet demo — passkey registration, deterministic addresses, modern UI | Next.js |
 | [multisig-wallet](#multisig-wallet) | Advanced | M-of-N multisig with off-chain (Veridex SDK) and on-chain (Solidity) modes | Next.js + Prisma |
 | [basic/](#basic-scripts) | Beginner | CLI scripts — create wallet, balances, transfers, bridging, gasless | TypeScript (Node) |
@@ -92,7 +92,7 @@ Browser (@veridex/sdk)  →  POST /api/agent  →  Server (@veridex/agentic-paym
 
 ### agent-advanced
 
-Production-grade AI agent with Gemini chat, MCP tool integration, ERC-8004 identity/reputation, trust-gated payments, and multi-chain support.
+Production-grade AI agent with Gemini chat, MCP tool integration, ERC-8004 identity/reputation, trust-gated payments, multi-chain support, and the full Agent-Safe Execution Control Plane (policy engine, security firewall, trace & evidence, escalation, circuit breaker).
 
 ```bash
 cd examples/agent-advanced
@@ -108,9 +108,14 @@ bun run dev
 1. Everything in `agent-basic`, plus:
 2. **Gemini AI chat** with function calling — the AI can check balances and make payments through natural language
 3. **MCP tools → Gemini function declarations** — `agent.getMCPTools()` mapped to Gemini's `functionDeclarations`
-4. **ERC-8004 identity** (optional) — register on-chain agent identity, check merchant reputation
-5. **Trust-gated payments** — reject merchants below a reputation threshold
-6. **Multi-chain** — Base Sepolia + Ethereum Sepolia
+4. **5 Payment Protocols** — x402, UCP, ACP, MPP, AP2 with automatic selection via `ProtocolRegistry`
+5. **ERC-8004 identity** (optional) — register on-chain agent identity, check merchant reputation
+6. **Trust-gated payments** — reject merchants below a reputation threshold
+7. **Policy Engine** — configurable spending limits, velocity controls, asset/chain whitelists
+8. **Security Firewall** — injection detection, tool sanitization, output guard, anomaly detection
+9. **Trace & Evidence** — cryptographic audit trails with pluggable storage backends
+10. **Escalation & Circuit Breaker** — human approval for high-value actions, cascading failure protection
+11. **Multi-chain** — Base Sepolia + Ethereum Sepolia
 
 **Key files:**
 

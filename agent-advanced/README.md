@@ -1,6 +1,6 @@
 # Veridex Agent — Advanced Example
 
-A production-grade Next.js app demonstrating the full power of `@veridex/agentic-payments`: AI-powered chat with Gemini, MCP tool integration, ERC-8004 identity/reputation, trust-gated payments, and multi-chain support.
+A production-grade Next.js app demonstrating the full power of `@veridex/agentic-payments`: AI-powered chat with Gemini, MCP tool integration, ERC-8004 identity/reputation, trust-gated payments, multi-chain support, and the Agent-Safe Execution Control Plane.
 
 ## What This Demonstrates
 
@@ -8,8 +8,10 @@ A production-grade Next.js app demonstrating the full power of `@veridex/agentic
 2. **Agent Provisioning** (server) — Create an `AgentWallet` with configurable session keys, spending limits, and optional ERC-8004 identity
 3. **AI Chat with Function Calling** — Gemini 2.0 Flash with MCP tools mapped to function declarations
 4. **Autonomous Payments** — The AI agent can check balances, send USDC, and report transaction results through natural language
-5. **ERC-8004 Identity** (optional) — Register on-chain agent identity, check merchant reputation, trust-gated payments
-6. **Session Management** — Real-time budget tracking, session refresh, and revocation
+5. **5 Payment Protocols** — x402, UCP, ACP, MPP, AP2 with automatic protocol selection via `ProtocolRegistry`
+6. **ERC-8004 Identity** (optional) — Register on-chain agent identity, check merchant reputation, trust-gated payments
+7. **Agent-Safe Control Plane** — Policy engine, security firewall (injection detection, tool sanitization, output guard), trace & evidence, escalation manager, circuit breaker
+8. **Session Management** — Real-time budget tracking, session refresh, and revocation
 
 ## Architecture
 
@@ -31,9 +33,12 @@ A production-grade Next.js app demonstrating the full power of `@veridex/agentic
 │  │  GeminiAgent     │  │  AgentWallet             │   │
 │  │  • Chat loop     │  │  • Session keys          │   │
 │  │  • Function calls│──│  • MCP tools             │   │
-│  │  • Tool results  │  │  • x402/UCP/ACP/AP2      │   │
+│  │  • Tool results  │  │  • x402/UCP/ACP/MPP/AP2  │   │
 │  └─────────────────┘  │  • ERC-8004 identity      │   │
 │                        │  • Trust gates            │   │
+│                        │  • Policy engine          │   │
+│                        │  • Security firewall      │   │
+│                        │  • Trace & evidence       │   │
 │                        └──────────────────────────┘   │
 └──────────────────────────────────────────────────────┘
 ```

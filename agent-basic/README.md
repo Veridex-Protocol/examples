@@ -78,3 +78,17 @@ await agent.revokeSession();
 - **Next.js 14** (App Router)
 - **@veridex/sdk** — Passkey wallet (browser)
 - **@veridex/agentic-payments** — Agent wallet with session keys (server)
+
+## Available Agent SDK Features
+
+This basic example uses core payment functionality. The full `@veridex/agentic-payments` SDK also provides:
+
+- **5 Payment Protocols** — x402, UCP, ACP, MPP, AP2 with automatic selection via `ProtocolRegistry`
+- **Policy Engine** — Spending limits, velocity controls, asset/chain whitelists, time windows
+- **Security Firewall** — Injection detection, tool sanitization, output scanning, anomaly detection
+- **Trace & Evidence** — Cryptographic audit trails with 8 storage backends (Memory, JSON, Postgres, IPFS, Arweave, Filecoin, Storacha, Akave)
+- **Escalation & Circuit Breaker** — Human-in-the-loop approval, cascading failure protection
+- **Hardened MCP Server** — Tool whitelisting, spending limits per tool, input/output scanning
+- **React Hooks** — `usePayment`, `useSessionStatus`, `useMultiChainBalance`, `useSpendingAlerts`, and more
+
+See the [Agent Advanced example](../agent-advanced/) for a full-featured integration with Gemini AI.
