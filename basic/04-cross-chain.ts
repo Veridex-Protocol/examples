@@ -7,19 +7,17 @@
  * Run: npm run basic:crosschain
  */
 
-import { createSDK } from '@veridex/sdk';
+import { createSDK, getChainConfig } from '@veridex/sdk';
 import { parseEther, parseUnits, formatEther, Wallet, JsonRpcProvider } from 'ethers';
 
 // Configuration
 const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // Base Sepolia USDC
 const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
 
-// Wormhole Chain IDs
-const CHAINS = {
-    BASE_SEPOLIA: 10004,
-    OPTIMISM_SEPOLIA: 10005,
-    ARBITRUM_SEPOLIA: 10003,
-};
+// Use chain presets instead of hardcoded Wormhole IDs
+const BASE = getChainConfig('base', 'testnet');
+const OPTIMISM = getChainConfig('optimism', 'testnet');
+const ARBITRUM = getChainConfig('arbitrum', 'testnet');
 
 async function main() {
     console.log('🌉 Veridex Cross-Chain Bridge Example\n');
@@ -65,10 +63,10 @@ async function main() {
         
         // Prepare the bridge to get fee estimates
         const prepared = await sdk.prepareBridge({
-            sourceChain: CHAINS.BASE_SEPOLIA,
+            sourceChain: BASE.wormholeChainId,
             token: 'native',
             amount: bridgeAmount,
-            destinationChain: CHAINS.OPTIMISM_SEPOLIA,
+            destinationChain: OPTIMISM.wormholeChainId,
             recipient: vaultAddress, // Bridge to your vault on Optimism
         });
 
@@ -88,10 +86,10 @@ async function main() {
         
         console.log('\n💵 Fee Breakdown:');
         const fees = await sdk.getBridgeFees({
-            sourceChain: CHAINS.BASE_SEPOLIA,
+            sourceChain: BASE.wormholeChainId,
             token: 'native',
             amount: bridgeAmount,
-            destinationChain: CHAINS.OPTIMISM_SEPOLIA,
+            destinationChain: OPTIMISM.wormholeChainId,
             recipient: vaultAddress,
         });
         
