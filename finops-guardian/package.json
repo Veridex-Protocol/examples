@@ -1,0 +1,18 @@
+{
+  "name": "@veridex/finops-guardian-example",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI FinOps agent with policy guardrails — showcases Veridex governed agent framework",
+  "type": "module",
+  "scripts": {
+    "start": "npx tsx src/index.ts",
+    "demo": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "openai": ">=4.70.0",
+    "zod": "^3.23.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.20.0"
+  }
+}
