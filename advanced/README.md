@@ -23,6 +23,18 @@ These scripts are intentionally designed to run in Node.js without requiring a b
   - Uses SDK crypto helpers (`generateSecp256k1KeyPair`, `signWithSessionKey`, etc.).
   - Does NOT call the on-chain registration path; purely off-chain lifecycle.
 
+- `03-internal-copilot.ts`
+  - Non-payment internal copilot using governed workspace state.
+  - Demonstrates: WorkspaceStateProvider/Adapter, ContextCompiler with retrieval policy, typed memory entries (note/derived_memory), security packs (injection + tool poisoning), workspace mutation proposals, eval regression suite.
+
+- `04-multi-agent-operator.ts`
+  - Multi-agent incident response workflow with task routing and approvals.
+  - Demonstrates: Orchestrator with dependency-aware DAG, capability-match scheduling, 4-agent team (triage → diagnostics → remediation, triage → comms), shared memory, security packs (injection + handoff safety), structured progress events, eval regression.
+
+- `05-treasury-agent.ts`
+  - Treasury management agent with trace binding and bounded payments.
+  - Demonstrates: budget ceiling security pack, endpoint allowlist, injection detection, policy evaluation (safe vs malicious proposals), CircuitBreaker for RPC resilience, UnifiedTraceCollector → TraceEnvelope with content + envelope hashing, InMemoryEnvelopeSink, per-transaction limits, eval regression.
+
 ## Running
 
 From `examples/`:

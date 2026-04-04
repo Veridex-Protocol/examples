@@ -13,10 +13,14 @@
     "advanced:session": "tsx advanced/02-session-lifecycle.ts",
     "session:create": "tsx sessions/01-create-session.ts",
     "session:execute": "tsx sessions/02-execute-batch.ts",
-    "session:revoke": "tsx sessions/03-revoke-session.ts"
+    "session:revoke": "tsx sessions/03-revoke-session.ts",
+    "advanced:copilot": "tsx advanced/03-internal-copilot.ts",
+    "advanced:operator": "tsx advanced/04-multi-agent-operator.ts",
+    "advanced:treasury": "tsx advanced/05-treasury-agent.ts"
   },
   "dependencies": {
     "@veridex/sdk": "workspace:*",
+    "@veridex/agents": "workspace:*",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0"
   },
