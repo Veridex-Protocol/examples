@@ -19,8 +19,8 @@
     "advanced:treasury": "tsx advanced/05-treasury-agent.ts"
   },
   "dependencies": {
-    "@veridex/sdk": "workspace:*",
-    "@veridex/agents": "workspace:*",
+    "@veridex/sdk": "^1.1.1",
+    "@veridex/agents": "^0.1.2",
     "dotenv": "^16.4.5",
     "ethers": "^6.13.0"
   },

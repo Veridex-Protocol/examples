@@ -9,8 +9,8 @@
   },
   "dependencies": {
     "@google/generative-ai": "^0.21.0",
-    "@veridex/agentic-payments": "workspace:*",
-    "@veridex/sdk": "workspace:*",
+    "@veridex/agentic-payments": "^2.0.5",
+    "@veridex/sdk": "^1.1.1",
     "ethers": "^6.13.0",
     "next": "^14.2.15",
     "react": "^18.3.1",
