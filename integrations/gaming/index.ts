@@ -10,7 +10,11 @@
 import { createSDK, SessionManager, EVMHubClientAdapter } from '@veridex/sdk';
 import { parseEther, formatEther, ethers, Wallet, JsonRpcProvider, getBytes } from 'ethers';
 
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+if (!process.env.PRIVATE_KEY) {
+  console.error('✖ PRIVATE_KEY is not set. Export it before running this example.');
+  process.exit(1);
+}
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 // Game contract ABIs (simplified)
 const GAME_ABI = [

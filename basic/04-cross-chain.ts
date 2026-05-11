@@ -12,7 +12,11 @@ import { parseEther, parseUnits, formatEther, Wallet, JsonRpcProvider } from 'et
 
 // Configuration
 const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // Base Sepolia USDC
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80';
+if (!process.env.PRIVATE_KEY) {
+  console.error('✖ PRIVATE_KEY is not set. Export it before running this example.');
+  process.exit(1);
+}
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 // Use chain presets instead of hardcoded Wormhole IDs
 const BASE = getChainConfig('base', 'testnet');

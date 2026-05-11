@@ -14,9 +14,17 @@ import { parseEther, parseUnits, formatEther, Wallet, JsonRpcProvider } from 'et
 const RECIPIENT = '0x742d35Cc6634C0532925a3b844Bc9e7595f5b0e7'; // Example recipient
 const USDC_ADDRESS = '0x036CbD53842c5426634e7929541eC2318f3dCF7e'; // Base Sepolia USDC
 
-// For this example to work in Node.js, we need an EOA to pay for gas
+// For this example to work in Node.js, we need an EOA to pay for gas.
 // In a browser, this would be your injected provider (Metamask, etc.)
-const PRIVATE_KEY = process.env.PRIVATE_KEY || '0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80'; // Hardhat #0
+//
+// Set PRIVATE_KEY before running. For local Hardhat dev, set it explicitly to
+// the public account #0 key. Never fall back to a hardcoded key — bots scan
+// the Hardhat default and will drain any public-network funds instantly.
+if (!process.env.PRIVATE_KEY) {
+  console.error('✖ PRIVATE_KEY is not set. Export it before running this example.');
+  process.exit(1);
+}
+const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 async function main() {
     console.log('💸 Veridex Token Transfer Example\n');
