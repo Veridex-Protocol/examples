@@ -64,12 +64,3 @@ and provider construction, so each script can stay focused on one concept.
 - **`Cannot find module '@veridex/agents'`** ── run `bun install` (or
   `npm install`) from the repo root so workspace links resolve.
 
-## Where to next
-
-When you're done with this ladder, look at:
-
-- [`../agent-basic/`](../agent-basic) ── browser passkey + USDC payments.
-- [`../agent-advanced/`](../agent-advanced) ── full Next.js app with MCP,
-  identity, and the Agent-Safe Execution Control Plane.
-- [`packages/agents/docs/getting-started.md`](../../packages/agents/docs/getting-started.md)
-  ── the official getting-started guide.
