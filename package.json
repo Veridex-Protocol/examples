@@ -16,13 +16,22 @@
     "session:revoke": "tsx sessions/03-revoke-session.ts",
     "advanced:copilot": "tsx advanced/03-internal-copilot.ts",
     "advanced:operator": "tsx advanced/04-multi-agent-operator.ts",
-    "advanced:treasury": "tsx advanced/05-treasury-agent.ts"
+    "advanced:treasury": "tsx advanced/05-treasury-agent.ts",
+    "gemini:01": "tsx agents-gemini/01-hello-agent.ts",
+    "gemini:02": "tsx agents-gemini/02-tool-calling.ts",
+    "gemini:03": "tsx agents-gemini/03-multi-tool-research.ts",
+    "gemini:04": "tsx agents-gemini/04-streaming.ts",
+    "gemini:05": "tsx agents-gemini/05-memory.ts",
+    "gemini:06": "tsx agents-gemini/06-policy-and-approval.ts",
+    "gemini:07": "tsx agents-gemini/07-checkpoint-and-resume.ts",
+    "gemini:08": "tsx agents-gemini/08-multi-agent-handoff.ts"
   },
   "dependencies": {
     "@veridex/sdk": "^1.1.1",
     "@veridex/agents": "^0.1.2",
     "dotenv": "^16.4.5",
-    "ethers": "^6.13.0"
+    "ethers": "^6.13.0",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/node": "^20.11.0",

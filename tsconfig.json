@@ -17,7 +17,8 @@
     "basic/**/*.ts",
     "sessions/**/*.ts",
     "advanced/**/*.ts",
-    "integrations/**/*.ts"
+    "integrations/**/*.ts",
+    "agents-gemini/**/*.ts"
   ],
   "exclude": [
     "node_modules",
